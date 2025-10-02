@@ -117,11 +117,13 @@ def _extract_code_blocks(content: str) -> List[tuple]:
 
         # Check for start of a mermaid code block
         # Match ```mermaid or ~~~mermaid (case-insensitive)
-        match = re.match(r'^(`{3,}|~{3,})\s*mermaid\s*$', line, re.IGNORECASE)
+        match = re.match(r"^(`{3,}|~{3,})\s*mermaid\s*$", line, re.IGNORECASE)
 
         if match:
             fence_chars = match.group(1)
-            fence_pattern = re.escape(fence_chars[0]) + "{" + str(len(fence_chars)) + ",}"
+            fence_pattern = (
+                re.escape(fence_chars[0]) + "{" + str(len(fence_chars)) + ",}"
+            )
             start_line = i + 1  # 1-indexed
             block_lines = []
             i += 1
@@ -131,7 +133,7 @@ def _extract_code_blocks(content: str) -> List[tuple]:
                 current_line = lines[i]
 
                 # Check if this is the closing fence
-                if re.match(f'^{fence_pattern}\\s*$', current_line):
+                if re.match(f"^{fence_pattern}\\s*$", current_line):
                     end_line = i + 1  # 1-indexed
                     mermaid_content = "\n".join(block_lines)
 
@@ -195,7 +197,7 @@ def extract_mermaid_blocks(file_path: Path) -> List[MermaidDiagram]:
             e.object,
             e.start,
             e.end,
-            f"Unable to decode file {file_path} as UTF-8"
+            f"Unable to decode file {file_path} as UTF-8",
         )
 
     # Extract code blocks
@@ -212,7 +214,7 @@ def extract_mermaid_blocks(file_path: Path) -> List[MermaidDiagram]:
             start_line=start_line,
             end_line=end_line,
             diagram_type=diagram_type,
-            index=index
+            index=index,
         )
         diagrams.append(diagram)
 

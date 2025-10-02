@@ -158,16 +158,12 @@ def generate(
 
         # Find markdown files
         console.print(f"\n[cyan]Scanning:[/cyan] {input_dir}")
-        console.print(
-            f"[cyan]Recursive:[/cyan] {'Yes' if recursive else 'No'}"
-        )
+        console.print(f"[cyan]Recursive:[/cyan] {'Yes' if recursive else 'No'}")
 
         md_files = file_handler.find_markdown_files(input_dir, recursive=recursive)
 
         if not md_files:
-            console.print(
-                "\n[yellow]No markdown files found.[/yellow]"
-            )
+            console.print("\n[yellow]No markdown files found.[/yellow]")
             return
 
         console.print(f"[cyan]Found:[/cyan] {len(md_files)} markdown file(s)\n")
@@ -184,9 +180,7 @@ def generate(
             TimeElapsedColumn(),
             console=console,
         ) as progress:
-            task = progress.add_task(
-                "[cyan]Processing files...", total=len(md_files)
-            )
+            task = progress.add_task("[cyan]Processing files...", total=len(md_files))
 
             for md_file in md_files:
                 try:
@@ -229,9 +223,7 @@ def generate(
                         mapping = file_handler.DiagramMapping(
                             source_file=str(md_file),
                             diagram_files=diagram_files,
-                            timestamp=str(
-                                __import__("datetime").datetime.now()
-                            ),
+                            timestamp=str(__import__("datetime").datetime.now()),
                         )
                         mappings.append(mapping)
 
@@ -254,7 +246,9 @@ def generate(
         # Display summary
         console.print("\n[bold cyan]Summary:[/bold cyan]")
         console.print(f"  Files processed: {result.files_processed}")
-        console.print(f"  Diagrams generated: [green]{result.diagrams_generated}[/green]")
+        console.print(
+            f"  Diagrams generated: [green]{result.diagrams_generated}[/green]"
+        )
         if result.diagrams_failed > 0:
             console.print(f"  Diagrams failed: [red]{result.diagrams_failed}[/red]")
 
@@ -314,9 +308,7 @@ def scan(
     try:
         # Find markdown files
         console.print(f"\n[cyan]Scanning:[/cyan] {input_dir}")
-        console.print(
-            f"[cyan]Recursive:[/cyan] {'Yes' if recursive else 'No'}\n"
-        )
+        console.print(f"[cyan]Recursive:[/cyan] {'Yes' if recursive else 'No'}\n")
 
         md_files = file_handler.find_markdown_files(input_dir, recursive=recursive)
 

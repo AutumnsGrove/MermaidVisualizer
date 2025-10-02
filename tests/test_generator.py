@@ -44,11 +44,7 @@ def output_dir(tmp_path):
 def mock_subprocess_success():
     """Mock successful subprocess call."""
     with patch("subprocess.run") as mock_run:
-        mock_run.return_value = Mock(
-            returncode=0,
-            stdout="",
-            stderr=""
-        )
+        mock_run.return_value = Mock(returncode=0, stdout="", stderr="")
         yield mock_run
 
 
@@ -57,9 +53,7 @@ def mock_subprocess_failure():
     """Mock failed subprocess call."""
     with patch("subprocess.run") as mock_run:
         mock_run.return_value = Mock(
-            returncode=1,
-            stdout="",
-            stderr="Error: Invalid syntax"
+            returncode=1, stdout="", stderr="Error: Invalid syntax"
         )
         yield mock_run
 
@@ -92,23 +86,24 @@ class TestDiagramGenerator:
         args = mock_subprocess_success.call_args[0][0]
         assert "svg" in " ".join(args).lower() or "-o" in args
 
-    def test_generate_with_npx(self, simple_flowchart, output_dir, mock_subprocess_success):
+    def test_generate_with_npx(
+        self, simple_flowchart, output_dir, mock_subprocess_success
+    ):
         """Test generation using npx."""
         from src.generator import generate_diagram
 
         output_file = output_dir / "diagram.png"
         result = generate_diagram(
-            simple_flowchart,
-            output_file,
-            format="png",
-            use_npx=True
+            simple_flowchart, output_file, format="png", use_npx=True
         )
 
         assert result is True
         args = mock_subprocess_success.call_args[0][0]
         assert "npx" in args
 
-    def test_generate_invalid_syntax(self, invalid_syntax, output_dir, mock_subprocess_failure):
+    def test_generate_invalid_syntax(
+        self, invalid_syntax, output_dir, mock_subprocess_failure
+    ):
         """Test handling of invalid mermaid syntax."""
         from src.generator import generate_diagram
 
@@ -126,7 +121,9 @@ class TestDiagramGenerator:
         with pytest.raises(ValueError):
             generate_diagram("", output_file, format="png")
 
-    def test_generate_creates_temp_file(self, simple_flowchart, output_dir, mock_subprocess_success):
+    def test_generate_creates_temp_file(
+        self, simple_flowchart, output_dir, mock_subprocess_success
+    ):
         """Test that temporary input file is created."""
         from src.generator import generate_diagram
 
@@ -141,16 +138,15 @@ class TestDiagramGenerator:
 
             mock_file.write.assert_called()
 
-    def test_generate_with_theme(self, simple_flowchart, output_dir, mock_subprocess_success):
+    def test_generate_with_theme(
+        self, simple_flowchart, output_dir, mock_subprocess_success
+    ):
         """Test generation with custom theme."""
         from src.generator import generate_diagram
 
         output_file = output_dir / "diagram.png"
         result = generate_diagram(
-            simple_flowchart,
-            output_file,
-            format="png",
-            theme="dark"
+            simple_flowchart, output_file, format="png", theme="dark"
         )
 
         assert result is True
@@ -158,16 +154,15 @@ class TestDiagramGenerator:
         # Check if theme parameter is passed
         assert any("theme" in str(arg).lower() for arg in args) or result
 
-    def test_generate_with_background_color(self, simple_flowchart, output_dir, mock_subprocess_success):
+    def test_generate_with_background_color(
+        self, simple_flowchart, output_dir, mock_subprocess_success
+    ):
         """Test generation with custom background color."""
         from src.generator import generate_diagram
 
         output_file = output_dir / "diagram.png"
         result = generate_diagram(
-            simple_flowchart,
-            output_file,
-            format="png",
-            background_color="transparent"
+            simple_flowchart, output_file, format="png", background_color="transparent"
         )
 
         assert result is True
@@ -177,17 +172,11 @@ class TestDiagramGenerator:
         from src.generator import generate_diagram
 
         with patch("subprocess.run") as mock_run:
-            mock_run.side_effect = subprocess.TimeoutExpired(
-                cmd=["mmdc"],
-                timeout=30
-            )
+            mock_run.side_effect = subprocess.TimeoutExpired(cmd=["mmdc"], timeout=30)
 
             output_file = output_dir / "diagram.png"
             result = generate_diagram(
-                simple_flowchart,
-                output_file,
-                format="png",
-                timeout=30
+                simple_flowchart, output_file, format="png", timeout=30
             )
 
             assert result is False
@@ -198,8 +187,7 @@ class TestDiagramGenerator:
 
         with patch("subprocess.run") as mock_run:
             mock_run.side_effect = subprocess.CalledProcessError(
-                returncode=1,
-                cmd=["mmdc"]
+                returncode=1, cmd=["mmdc"]
             )
 
             output_file = output_dir / "diagram.png"
@@ -245,7 +233,9 @@ class TestDiagramGenerator:
 
         assert is_valid is False
 
-    def test_batch_generate(self, simple_flowchart, sequence_diagram, output_dir, mock_subprocess_success):
+    def test_batch_generate(
+        self, simple_flowchart, sequence_diagram, output_dir, mock_subprocess_success
+    ):
         """Test batch generation of multiple diagrams."""
         from src.generator import batch_generate_diagrams
 
@@ -259,7 +249,9 @@ class TestDiagramGenerator:
         assert len(results) == 2
         assert all(r["success"] for r in results)
 
-    def test_batch_generate_with_failures(self, simple_flowchart, invalid_syntax, output_dir):
+    def test_batch_generate_with_failures(
+        self, simple_flowchart, invalid_syntax, output_dir
+    ):
         """Test batch generation with some failures."""
         from src.generator import batch_generate_diagrams
 
@@ -318,49 +310,48 @@ class TestDiagramGenerator:
 
             assert is_mermaid_cli_available() is False
 
-    def test_generate_with_width(self, simple_flowchart, output_dir, mock_subprocess_success):
+    def test_generate_with_width(
+        self, simple_flowchart, output_dir, mock_subprocess_success
+    ):
         """Test generation with custom width."""
         from src.generator import generate_diagram
 
         output_file = output_dir / "diagram.png"
         result = generate_diagram(
-            simple_flowchart,
-            output_file,
-            format="png",
-            width=1920
+            simple_flowchart, output_file, format="png", width=1920
         )
 
         assert result is True
 
-    def test_generate_with_height(self, simple_flowchart, output_dir, mock_subprocess_success):
+    def test_generate_with_height(
+        self, simple_flowchart, output_dir, mock_subprocess_success
+    ):
         """Test generation with custom height."""
         from src.generator import generate_diagram
 
         output_file = output_dir / "diagram.png"
         result = generate_diagram(
-            simple_flowchart,
-            output_file,
-            format="png",
-            height=1080
+            simple_flowchart, output_file, format="png", height=1080
         )
 
         assert result is True
 
-    def test_generate_with_scale(self, simple_flowchart, output_dir, mock_subprocess_success):
+    def test_generate_with_scale(
+        self, simple_flowchart, output_dir, mock_subprocess_success
+    ):
         """Test generation with custom scale."""
         from src.generator import generate_diagram
 
         output_file = output_dir / "diagram.png"
         result = generate_diagram(
-            simple_flowchart,
-            output_file,
-            format="png",
-            scale=2.0
+            simple_flowchart, output_file, format="png", scale=2.0
         )
 
         assert result is True
 
-    def test_generate_output_dir_created(self, simple_flowchart, tmp_path, mock_subprocess_success):
+    def test_generate_output_dir_created(
+        self, simple_flowchart, tmp_path, mock_subprocess_success
+    ):
         """Test that output directory is created if it doesn't exist."""
         from src.generator import generate_diagram
 
@@ -379,7 +370,9 @@ class TestDiagramGenerator:
         with pytest.raises(ValueError):
             generate_diagram(simple_flowchart, output_file, format="xyz")
 
-    def test_generate_sequence_diagram(self, sequence_diagram, output_dir, mock_subprocess_success):
+    def test_generate_sequence_diagram(
+        self, sequence_diagram, output_dir, mock_subprocess_success
+    ):
         """Test generation of sequence diagram specifically."""
         from src.generator import generate_diagram
 
@@ -388,7 +381,9 @@ class TestDiagramGenerator:
 
         assert result is True
 
-    def test_cleanup_temp_files(self, simple_flowchart, output_dir, mock_subprocess_success):
+    def test_cleanup_temp_files(
+        self, simple_flowchart, output_dir, mock_subprocess_success
+    ):
         """Test that temporary files are cleaned up."""
         from src.generator import generate_diagram
 
@@ -405,7 +400,9 @@ class TestDiagramGenerator:
             mock_temp.return_value.__enter__.assert_called()
             mock_temp.return_value.__exit__.assert_called()
 
-    def test_generate_with_config_file(self, simple_flowchart, output_dir, mock_subprocess_success):
+    def test_generate_with_config_file(
+        self, simple_flowchart, output_dir, mock_subprocess_success
+    ):
         """Test generation with custom config file."""
         from src.generator import generate_diagram
 
@@ -414,10 +411,7 @@ class TestDiagramGenerator:
 
         output_file = output_dir / "diagram.png"
         result = generate_diagram(
-            simple_flowchart,
-            output_file,
-            format="png",
-            config_file=config_file
+            simple_flowchart, output_file, format="png", config_file=config_file
         )
 
         assert result is True
@@ -435,7 +429,9 @@ class TestDiagramGenerator:
 
         assert result is True
 
-    def test_special_characters_in_output_path(self, simple_flowchart, tmp_path, mock_subprocess_success):
+    def test_special_characters_in_output_path(
+        self, simple_flowchart, tmp_path, mock_subprocess_success
+    ):
         """Test generation with special characters in output path."""
         from src.generator import generate_diagram
 

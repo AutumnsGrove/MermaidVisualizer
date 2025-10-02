@@ -16,15 +16,18 @@ def sample_project(tmp_path):
     (tmp_path / "tests").mkdir()
 
     # Create markdown files with mermaid diagrams
-    (tmp_path / "docs" / "README.md").write_text("""# Documentation
+    (tmp_path / "docs" / "README.md").write_text(
+        """# Documentation
 
 ```mermaid
 flowchart TD
     A --> B
 ```
-""")
+"""
+    )
 
-    (tmp_path / "docs" / "architecture" / "system.md").write_text("""# System
+    (tmp_path / "docs" / "architecture" / "system.md").write_text(
+        """# System
 
 ```mermaid
 sequenceDiagram
@@ -35,25 +38,30 @@ sequenceDiagram
 flowchart LR
     X --> Y
 ```
-""")
+"""
+    )
 
-    (tmp_path / "docs" / "api" / "endpoints.md").write_text("""# API
+    (tmp_path / "docs" / "api" / "endpoints.md").write_text(
+        """# API
 
 No diagrams here.
-""")
+"""
+    )
 
     # Create non-markdown files
     (tmp_path / "docs" / "image.png").write_text("fake image")
     (tmp_path / "src" / "code.py").write_text("print('hello')")
 
     # Create markdown in subdirectory
-    (tmp_path / "tests" / "test.md").write_text("""# Test
+    (tmp_path / "tests" / "test.md").write_text(
+        """# Test
 
 ```mermaid
 gantt
     title Timeline
 ```
-""")
+"""
+    )
 
     return tmp_path
 
@@ -70,7 +78,8 @@ def output_dir(tmp_path):
 def single_file(tmp_path):
     """Create a single markdown file."""
     file_path = tmp_path / "single.md"
-    file_path.write_text("""# Single
+    file_path.write_text(
+        """# Single
 
 ```mermaid
 flowchart TD
@@ -82,7 +91,8 @@ pie title Data
     "A" : 30
     "B" : 70
 ```
-""")
+"""
+    )
     return file_path
 
 
@@ -143,9 +153,7 @@ class TestFileDiscovery:
         from src.file_handler import find_markdown_files
 
         files = find_markdown_files(
-            sample_project,
-            pattern="**/system.md",
-            recursive=True
+            sample_project, pattern="**/system.md", recursive=True
         )
 
         assert len(files) == 1
@@ -156,9 +164,7 @@ class TestFileDiscovery:
         from src.file_handler import find_markdown_files
 
         files = find_markdown_files(
-            sample_project,
-            recursive=True,
-            exclude_patterns=["**/tests/**"]
+            sample_project, recursive=True, exclude_patterns=["**/tests/**"]
         )
 
         assert not any("tests" in str(f) for f in files)
@@ -185,7 +191,7 @@ class TestOutputFilenameGeneration:
             source_file="document.md",
             block_index=0,
             diagram_type="flowchart",
-            format="png"
+            format="png",
         )
 
         assert filename == "document_0_flowchart.png"
@@ -198,7 +204,7 @@ class TestOutputFilenameGeneration:
             source_file="/path/to/document.md",
             block_index=2,
             diagram_type="sequence",
-            format="svg"
+            format="svg",
         )
 
         assert filename == "document_2_sequence.svg"
@@ -209,8 +215,7 @@ class TestOutputFilenameGeneration:
         from src.file_handler import generate_output_filename
 
         filenames = [
-            generate_output_filename("doc.md", i, "flowchart", "png")
-            for i in range(3)
+            generate_output_filename("doc.md", i, "flowchart", "png") for i in range(3)
         ]
 
         assert filenames[0] == "doc_0_flowchart.png"
@@ -225,7 +230,7 @@ class TestOutputFilenameGeneration:
             source_file="document.md",
             block_index=0,
             diagram_type="unknown",
-            format="png"
+            format="png",
         )
 
         assert filename == "document_0_unknown.png"
@@ -238,7 +243,7 @@ class TestOutputFilenameGeneration:
             source_file="my document (v2).md",
             block_index=0,
             diagram_type="flowchart",
-            format="png"
+            format="png",
         )
 
         # Special characters should be sanitized
@@ -253,7 +258,7 @@ class TestOutputFilenameGeneration:
             block_index=0,
             diagram_type="flowchart",
             format="png",
-            prefix="diagram_"
+            prefix="diagram_",
         )
 
         assert filename.startswith("diagram_")
@@ -267,7 +272,7 @@ class TestOutputFilenameGeneration:
             block_index=0,
             diagram_type="sequence",
             format="png",
-            preserve_path=True
+            preserve_path=True,
         )
 
         # Should preserve directory structure
@@ -286,14 +291,14 @@ class TestMappingCreation:
                 "source_file": str(single_file),
                 "index": 0,
                 "type": "flowchart",
-                "output_file": "single_0_flowchart.png"
+                "output_file": "single_0_flowchart.png",
             },
             {
                 "source_file": str(single_file),
                 "index": 1,
                 "type": "pie",
-                "output_file": "single_1_pie.png"
-            }
+                "output_file": "single_1_pie.png",
+            },
         ]
 
         mapping = create_diagram_mapping(diagrams)
@@ -310,14 +315,16 @@ class TestMappingCreation:
                 "source_file": str(sample_project / "docs" / "README.md"),
                 "index": 0,
                 "type": "flowchart",
-                "output_file": "README_0_flowchart.png"
+                "output_file": "README_0_flowchart.png",
             },
             {
-                "source_file": str(sample_project / "docs" / "architecture" / "system.md"),
+                "source_file": str(
+                    sample_project / "docs" / "architecture" / "system.md"
+                ),
                 "index": 0,
                 "type": "sequence",
-                "output_file": "system_0_sequence.png"
-            }
+                "output_file": "system_0_sequence.png",
+            },
         ]
 
         mapping = create_diagram_mapping(diagrams)
@@ -346,15 +353,15 @@ class TestIndexGeneration:
                 "index": 0,
                 "type": "flowchart",
                 "output_file": "README_0_flowchart.png",
-                "title": "System Overview"
+                "title": "System Overview",
             },
             {
                 "source_file": "docs/api.md",
                 "index": 0,
                 "type": "sequence",
                 "output_file": "api_0_sequence.png",
-                "title": "API Flow"
-            }
+                "title": "API Flow",
+            },
         ]
 
         index_path = generate_index_html(diagrams, output_dir)
@@ -388,7 +395,7 @@ class TestIndexGeneration:
                 "output_file": "README_0_flowchart.png",
                 "title": "Architecture",
                 "start_line": 10,
-                "end_line": 15
+                "end_line": 15,
             }
         ]
 
@@ -407,14 +414,14 @@ class TestIndexGeneration:
                 "source_file": "docs/README.md",
                 "index": 0,
                 "type": "flowchart",
-                "output_file": "README_0_flowchart.png"
+                "output_file": "README_0_flowchart.png",
             },
             {
                 "source_file": "docs/README.md",
                 "index": 1,
                 "type": "sequence",
-                "output_file": "README_1_sequence.png"
-            }
+                "output_file": "README_1_sequence.png",
+            },
         ]
 
         index_path = generate_index_html(diagrams, output_dir)

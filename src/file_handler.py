@@ -22,6 +22,7 @@ class DiagramMapping:
         diagram_files: List of paths to generated diagram files
         timestamp: When the diagrams were generated
     """
+
     source_file: str
     diagram_files: List[str]
     timestamp: str
@@ -53,24 +54,23 @@ def find_markdown_files(directory: Path, recursive: bool = True) -> List[Path]:
     try:
         if recursive:
             # Use rglob for recursive search
-            for pattern in ['*.md', '*.markdown']:
+            for pattern in ["*.md", "*.markdown"]:
                 markdown_files.extend(directory.rglob(pattern))
         else:
             # Use glob for non-recursive search
-            for pattern in ['*.md', '*.markdown']:
+            for pattern in ["*.md", "*.markdown"]:
                 markdown_files.extend(directory.glob(pattern))
     except PermissionError as e:
-        raise PermissionError(f"Permission denied accessing directory: {directory}") from e
+        raise PermissionError(
+            f"Permission denied accessing directory: {directory}"
+        ) from e
 
     # Sort for consistent ordering
     return sorted(set(markdown_files))
 
 
 def create_output_filename(
-    source_file: Path,
-    index: int,
-    diagram_type: str,
-    format: str
+    source_file: Path, index: int, diagram_type: str, format: str
 ) -> str:
     """
     Generate a standardized output filename for a diagram.
@@ -110,9 +110,7 @@ def ensure_output_dir(output_dir: Path) -> None:
             f"Permission denied creating directory: {output_dir}"
         ) from e
     except OSError as e:
-        raise OSError(
-            f"Failed to create directory: {output_dir}"
-        ) from e
+        raise OSError(f"Failed to create directory: {output_dir}") from e
 
 
 def save_mapping(mappings: List[DiagramMapping], output_dir: Path) -> None:
@@ -135,16 +133,14 @@ def save_mapping(mappings: List[DiagramMapping], output_dir: Path) -> None:
     mappings_data = [asdict(mapping) for mapping in mappings]
 
     try:
-        with mapping_file.open('w', encoding='utf-8') as f:
+        with mapping_file.open("w", encoding="utf-8") as f:
             json.dump(mappings_data, f, indent=2, ensure_ascii=False)
     except PermissionError as e:
         raise PermissionError(
             f"Permission denied writing mapping file: {mapping_file}"
         ) from e
     except OSError as e:
-        raise OSError(
-            f"Failed to write mapping file: {mapping_file}"
-        ) from e
+        raise OSError(f"Failed to write mapping file: {mapping_file}") from e
 
 
 def load_mapping(output_dir: Path) -> List[DiagramMapping]:
@@ -167,13 +163,11 @@ def load_mapping(output_dir: Path) -> List[DiagramMapping]:
         raise FileNotFoundError(f"Mapping file not found: {mapping_file}")
 
     try:
-        with mapping_file.open('r', encoding='utf-8') as f:
+        with mapping_file.open("r", encoding="utf-8") as f:
             mappings_data = json.load(f)
     except json.JSONDecodeError as e:
         raise json.JSONDecodeError(
-            f"Invalid JSON in mapping file: {mapping_file}",
-            e.doc,
-            e.pos
+            f"Invalid JSON in mapping file: {mapping_file}", e.doc, e.pos
         ) from e
 
     # Convert dictionaries back to dataclasses
@@ -298,11 +292,13 @@ def generate_index_html(mappings: List[DiagramMapping], output_dir: Path) -> Non
                 <div class="diagram-filename">{relative_path}</div>
             </div>
 """
-                html_content += '        </div>\n'
+                html_content += "        </div>\n"
             else:
-                html_content += '        <p class="no-diagrams">No diagrams found.</p>\n'
+                html_content += (
+                    '        <p class="no-diagrams">No diagrams found.</p>\n'
+                )
 
-            html_content += '    </div>\n'
+            html_content += "    </div>\n"
 
     html_content += """
 </body>
@@ -312,13 +308,11 @@ def generate_index_html(mappings: List[DiagramMapping], output_dir: Path) -> Non
     index_file = output_dir / "index.html"
 
     try:
-        with index_file.open('w', encoding='utf-8') as f:
+        with index_file.open("w", encoding="utf-8") as f:
             f.write(html_content)
     except PermissionError as e:
         raise PermissionError(
             f"Permission denied writing index file: {index_file}"
         ) from e
     except OSError as e:
-        raise OSError(
-            f"Failed to write index file: {index_file}"
-        ) from e
+        raise OSError(f"Failed to write index file: {index_file}") from e

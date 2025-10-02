@@ -125,10 +125,12 @@ graph TD
 @pytest.fixture
 def temp_markdown_file(tmp_path):
     """Create a temporary markdown file."""
+
     def _create_file(content, filename="test.md"):
         file_path = tmp_path / filename
         file_path.write_text(content)
         return file_path
+
     return _create_file
 
 
@@ -332,13 +334,16 @@ class TestMermaidExtractor:
         blocks = extract_mermaid_blocks(mixed_code_blocks_content)
 
         assert len(blocks) == 2
-        assert all("mermaid" in block["content"].lower() or
-                   "pie" in block["content"].lower() or
-                   "graph" in block["content"].lower()
-                   for block in blocks)
-        assert not any("console.log" in block["content"] or
-                       "print(" in block["content"]
-                       for block in blocks)
+        assert all(
+            "mermaid" in block["content"].lower()
+            or "pie" in block["content"].lower()
+            or "graph" in block["content"].lower()
+            for block in blocks
+        )
+        assert not any(
+            "console.log" in block["content"] or "print(" in block["content"]
+            for block in blocks
+        )
 
     def test_whitespace_preservation(self):
         """Test that whitespace in diagrams is preserved."""

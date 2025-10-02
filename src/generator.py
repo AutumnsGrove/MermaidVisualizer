@@ -235,7 +235,10 @@ def generate_diagram(
             # Check for specific error patterns
             if "syntax" in error_output.lower() or "parse" in error_output.lower():
                 logger.error("Invalid Mermaid syntax detected")
-            elif "not found" in error_output.lower() or "command not found" in error_output.lower():
+            elif (
+                "not found" in error_output.lower()
+                or "command not found" in error_output.lower()
+            ):
                 logger.error("mermaid-cli not found - ensure it is installed")
 
             return False
@@ -278,4 +281,6 @@ def generate_diagram(
                 temp_input_path.unlink()
                 logger.debug(f"Cleaned up temporary file: {temp_input_path}")
             except Exception as e:
-                logger.warning(f"Failed to clean up temporary file {temp_input_path}: {str(e)}")
+                logger.warning(
+                    f"Failed to clean up temporary file {temp_input_path}: {str(e)}"
+                )
