@@ -1,0 +1,69 @@
+# MermaidVisualizer Configuration
+
+# Input directory containing markdown files
+input_dir: .
+
+# Output directory for generated diagrams
+output_dir: ./diagrams
+
+# Output format: png or svg
+format: png
+
+# Recursively scan subdirectories
+recursive: true
+
+# Mermaid CLI options
+mermaid:
+  # Use npx to run mermaid-cli (true) or use system mmdc (false)
+  use_npx: true
+
+  # Timeout for diagram generation in seconds
+  timeout: 60
+
+  # Theme: default, forest, dark, neutral
+  theme: default
+
+  # Background color: transparent, white, or any hex color
+  background_color: white
+
+  # Output scale (higher = larger diagrams)
+  scale: 1.0
+
+  # Custom width (optional, in pixels)
+  width: null
+
+  # Custom height (optional, in pixels)
+  height: null
+
+# File handling options
+file_handling:
+  # Overwrite existing diagrams
+  overwrite: true
+
+  # Generate index.html
+  generate_index: true
+
+  # Save diagram mappings to JSON
+  save_mappings: true
+
+# Logging configuration
+logging:
+  # Log level: DEBUG, INFO, WARNING, ERROR
+  level: INFO
+
+  # Log file path (null for console only)
+  file: null
+
+  # Verbose output
+  verbose: false
+
+# Processing options
+processing:
+  # Continue on error (if false, stop on first error)
+  continue_on_error: true
+
+  # Maximum concurrent processes (for batch generation)
+  max_workers: 4
+
+  # Skip diagrams that haven't changed (based on file modification time)
+  cache_enabled: true
