@@ -128,7 +128,7 @@ def validate_mermaid_syntax(mermaid_content: str) -> Tuple[bool, str]:
 
 
 def generate_diagram(
-    mermaid_content: str, output_path: Path, format: str = "png"
+    mermaid_content: str, output_path: Path, format: str = "png", scale: int = 3, width: int = 2400
 ) -> bool:
     """
     Generate a diagram image from Mermaid syntax.
@@ -140,6 +140,8 @@ def generate_diagram(
         mermaid_content: The Mermaid diagram syntax as a string
         output_path: Path where the output diagram should be saved
         format: Output format, either "png" or "svg" (default: "png")
+        scale: Scale factor for PNG output (default: 3 for high resolution)
+        width: Width of the output image in pixels (default: 2400)
 
     Returns:
         True if diagram generation was successful, False otherwise
@@ -150,7 +152,7 @@ def generate_diagram(
     Example:
         >>> mermaid = "graph TD\\nA[Start] --> B[End]"
         >>> output = Path("diagram.png")
-        >>> success = generate_diagram(mermaid, output, "png")
+        >>> success = generate_diagram(mermaid, output, "png", scale=3)
         >>> if success:
         ...     print("Diagram generated successfully")
     """
@@ -212,15 +214,22 @@ def generate_diagram(
             f"Generating {format.upper()} diagram from Mermaid content to {output_path}"
         )
 
+        # Build command with scale and width parameters for high resolution
+        cmd = [
+            "/opt/homebrew/bin/npx",
+            "@mermaid-js/mermaid-cli",
+            "-i",
+            str(temp_input_path),
+            "-o",
+            str(output_path),
+            "-s",
+            str(scale),
+            "-w",
+            str(width),
+        ]
+
         result = subprocess.run(
-            [
-                "/opt/homebrew/bin/npx",
-                "@mermaid-js/mermaid-cli",
-                "-i",
-                str(temp_input_path),
-                "-o",
-                str(output_path),
-            ],
+            cmd,
             capture_output=True,
             text=True,
             timeout=60,

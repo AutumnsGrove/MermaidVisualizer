@@ -92,6 +92,32 @@ def create_output_filename(
     return f"{source_name}_{index}_{diagram_type}.{format}"
 
 
+def get_project_name(source_file: Path, levels_up: int = 2) -> str:
+    """
+    Extract project name from a source file path by going up N levels.
+
+    Args:
+        source_file: Path to the source markdown file
+        levels_up: How many directory levels to go up (default: 2)
+
+    Returns:
+        Project name string
+
+    Example:
+        >>> get_project_name(Path('/Users/name/Projects/MyProject/docs/file.md'), 2)
+        'MyProject'
+    """
+    try:
+        # Go up the specified number of levels
+        parent = source_file.resolve()
+        for _ in range(levels_up):
+            parent = parent.parent
+        return parent.name
+    except Exception:
+        # Fallback to immediate parent if we can't go up enough levels
+        return source_file.parent.name
+
+
 def ensure_output_dir(output_dir: Path) -> None:
     """
     Ensure the output directory exists, creating it if necessary.

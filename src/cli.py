@@ -116,6 +116,20 @@ def cli():
     help="Output format: png or svg",
 )
 @click.option(
+    "--scale",
+    "-s",
+    default=3,
+    type=int,
+    help="Scale factor for PNG output (default: 3 for high resolution)",
+)
+@click.option(
+    "--width",
+    "-w",
+    default=2400,
+    type=int,
+    help="Width of output image in pixels (default: 2400)",
+)
+@click.option(
     "--recursive/--no-recursive",
     default=True,
     help="Recursively scan subdirectories",
@@ -130,6 +144,8 @@ def generate(
     input_dir: Path,
     output_dir: str,
     format: str,
+    scale: int,
+    width: int,
     recursive: bool,
     verbose: bool,
 ) -> None:
@@ -195,6 +211,12 @@ def generate(
 
                     # Generate each diagram
                     diagram_files = []
+
+                    # Get project name and create project-specific subdirectory
+                    project_name = file_handler.get_project_name(md_file, levels_up=3)
+                    project_output_dir = output_path / project_name
+                    file_handler.ensure_output_dir(project_output_dir)
+
                     for diagram in diagrams:
                         output_filename = file_handler.create_output_filename(
                             diagram.source_file,
@@ -202,10 +224,10 @@ def generate(
                             diagram.diagram_type,
                             format,
                         )
-                        output_file = output_path / output_filename
+                        output_file = project_output_dir / output_filename
 
                         success = generator.generate_diagram(
-                            diagram.content, output_file, format
+                            diagram.content, output_file, format, scale, width
                         )
 
                         if success:
@@ -237,11 +259,23 @@ def generate(
 
                 progress.advance(task)
 
-        # Save mappings and generate index
+        # Save mappings and generate index per project
         if mappings:
-            file_handler.save_mapping(mappings, output_path)
-            file_handler.generate_index_html(mappings, output_path)
-            logger.info("Generated index.html")
+            # Group mappings by project
+            projects_map = {}
+            for mapping in mappings:
+                src_path = Path(mapping.source_file)
+                proj_name = file_handler.get_project_name(src_path, levels_up=3)
+                if proj_name not in projects_map:
+                    projects_map[proj_name] = []
+                projects_map[proj_name].append(mapping)
+
+            # Save per project
+            for proj_name, proj_mappings in projects_map.items():
+                proj_dir = output_path / proj_name
+                file_handler.save_mapping(proj_mappings, proj_dir)
+                file_handler.generate_index_html(proj_mappings, proj_dir)
+                logger.info(f"Generated index.html for {proj_name}")
 
         # Display summary
         console.print("\n[bold cyan]Summary:[/bold cyan]")
