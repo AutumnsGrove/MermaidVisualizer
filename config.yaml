@@ -46,6 +46,11 @@ file_handling:
   # Save diagram mappings to JSON
   save_mappings: true
 
+  # Create linked markdown files with wiki-style image references
+  # When enabled, diagrams are output to source directory and a new markdown
+  # file is created with mermaid blocks replaced by ![[image.png]] links
+  create_linked_markdown: true
+
 # Logging configuration
 logging:
   # Log level: DEBUG, INFO, WARNING, ERROR

@@ -140,6 +140,11 @@ def cli():
     is_flag=True,
     help="Enable verbose logging",
 )
+@click.option(
+    "--create-linked-markdown/--no-create-linked-markdown",
+    default=True,
+    help="Create modified markdown files with wiki-style image links (default: enabled)",
+)
 def generate(
     input_dir: Path,
     output_dir: str,
@@ -148,6 +153,7 @@ def generate(
     width: int,
     recursive: bool,
     verbose: bool,
+    create_linked_markdown: bool,
 ) -> None:
     """
     Extract and generate diagrams from markdown files.
@@ -212,10 +218,16 @@ def generate(
                     # Generate each diagram
                     diagram_files = []
 
-                    # Get project name and create project-specific subdirectory
-                    project_name = file_handler.get_project_name(md_file, levels_up=3)
-                    project_output_dir = output_path / project_name
-                    file_handler.ensure_output_dir(project_output_dir)
+                    # Determine output directory based on create_linked_markdown option
+                    if create_linked_markdown:
+                        # Output diagrams to the source file's directory
+                        diagram_output_dir = md_file.parent
+                    else:
+                        # Get project name and create project-specific subdirectory
+                        project_name = file_handler.get_project_name(md_file, levels_up=3)
+                        diagram_output_dir = output_path / project_name
+
+                    file_handler.ensure_output_dir(diagram_output_dir)
 
                     for diagram in diagrams:
                         output_filename = file_handler.create_output_filename(
@@ -224,7 +236,7 @@ def generate(
                             diagram.diagram_type,
                             format,
                         )
-                        output_file = project_output_dir / output_filename
+                        output_file = diagram_output_dir / output_filename
 
                         success = generator.generate_diagram(
                             diagram.content, output_file, format, scale, width
@@ -248,6 +260,17 @@ def generate(
                             timestamp=str(__import__("datetime").datetime.now()),
                         )
                         mappings.append(mapping)
+
+                        # Create linked markdown if requested
+                        if create_linked_markdown:
+                            try:
+                                linked_file = file_handler.create_linked_markdown(
+                                    md_file, diagram_files, output_in_source_dir=True
+                                )
+                                if linked_file:
+                                    logger.debug(f"Created linked markdown: {linked_file.name}")
+                            except Exception as e:
+                                logger.warning(f"Failed to create linked markdown for {md_file.name}: {str(e)}")
 
                     result.files_processed += 1
 

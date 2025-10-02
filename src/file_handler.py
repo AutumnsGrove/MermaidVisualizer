@@ -200,6 +200,104 @@ def load_mapping(output_dir: Path) -> List[DiagramMapping]:
     return [DiagramMapping(**data) for data in mappings_data]
 
 
+def create_linked_markdown(
+    source_file: Path, diagram_files: List[str], output_in_source_dir: bool = True
+) -> Optional[Path]:
+    """
+    Create a modified markdown file with mermaid blocks replaced by wiki-style image links.
+
+    Args:
+        source_file: Path to the original markdown file
+        diagram_files: List of paths to generated diagram files (in order)
+        output_in_source_dir: If True, output diagrams to source file directory
+
+    Returns:
+        Path to the created linked markdown file, or None if creation failed
+
+    Raises:
+        FileNotFoundError: If source file doesn't exist
+        PermissionError: If files cannot be read/written
+    """
+    if not source_file.exists():
+        raise FileNotFoundError(f"Source file not found: {source_file}")
+
+    # Read the original content
+    try:
+        content = source_file.read_text(encoding="utf-8")
+    except UnicodeDecodeError as e:
+        raise UnicodeDecodeError(
+            e.encoding,
+            e.object,
+            e.start,
+            e.end,
+            f"Unable to decode file {source_file} as UTF-8",
+        )
+
+    # Find and replace mermaid blocks with image links
+    lines = content.split("\n")
+    result_lines = []
+    diagram_index = 0
+    i = 0
+
+    while i < len(lines):
+        line = lines[i]
+
+        # Check for start of a mermaid code block
+        import re
+
+        match = re.match(r"^(`{3,}|~{3,})\s*mermaid\s*$", line, re.IGNORECASE)
+
+        if match and diagram_index < len(diagram_files):
+            fence_chars = match.group(1)
+            fence_pattern = (
+                re.escape(fence_chars[0]) + "{" + str(len(fence_chars)) + ",}"
+            )
+
+            # Skip until we find the closing fence
+            i += 1
+            while i < len(lines):
+                if re.match(f"^{fence_pattern}\\s*$", lines[i]):
+                    break
+                i += 1
+
+            # Replace the entire block with image link
+            diagram_path = Path(diagram_files[diagram_index])
+
+            if output_in_source_dir:
+                # Use just the filename for wiki-style link in same directory
+                image_link = f"![[{diagram_path.name}]]"
+            else:
+                # Use relative path if in different directory
+                try:
+                    rel_path = diagram_path.relative_to(source_file.parent)
+                    image_link = f"![[{rel_path}]]"
+                except ValueError:
+                    # If can't make relative, use absolute
+                    image_link = f"![[{diagram_path}]]"
+
+            result_lines.append(image_link)
+            diagram_index += 1
+        else:
+            result_lines.append(line)
+
+        i += 1
+
+    # Create output filename
+    output_file = source_file.parent / f"{source_file.stem}_linked{source_file.suffix}"
+
+    # Write the modified content
+    try:
+        with output_file.open("w", encoding="utf-8") as f:
+            f.write("\n".join(result_lines))
+        return output_file
+    except PermissionError as e:
+        raise PermissionError(
+            f"Permission denied writing linked markdown: {output_file}"
+        ) from e
+    except OSError as e:
+        raise OSError(f"Failed to write linked markdown: {output_file}") from e
+
+
 def generate_index_html(mappings: List[DiagramMapping], output_dir: Path) -> None:
     """
     Generate an index.html file showing all diagrams with source links.
