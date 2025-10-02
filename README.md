@@ -23,15 +23,30 @@ MermaidVisualizer is a Python tool that recursively scans directories for markdo
 
 - Python 3.10+
 - Node.js (for Mermaid CLI via npx)
-- UV package manager (recommended) or pip
+- UV package manager (recommended)
 
-### Setup with UV
+### Install as System-Wide Command
 
 ```bash
 # Clone the repository
 git clone <repository-url>
 cd MermaidVisualizer
 
+# Install globally with UV (recommended)
+uv tool install --editable .
+```
+
+Now you can use the `mermaid` command from anywhere:
+
+```bash
+mermaid generate --input-dir ./docs
+mermaid scan
+mermaid clean
+```
+
+### Install for Development
+
+```bash
 # Create virtual environment
 uv venv
 
@@ -42,34 +57,36 @@ source .venv/bin/activate  # On Windows: .venv\Scripts\activate
 uv pip install -r requirements.txt
 ```
 
-### Setup with pip
-
-```bash
-pip install -r requirements.txt
-```
-
 ## Usage
 
 ### Basic Commands
 
+If installed with `uv tool install`:
+
 ```bash
 # Generate diagrams from markdown files in current directory
-python -m src.cli generate
+mermaid generate
 
 # Specify input and output directories
-python -m src.cli generate --input-dir ./docs --output-dir ./diagrams
+mermaid generate --input-dir ./docs --output-dir ./diagrams
 
 # Generate SVG instead of PNG
-python -m src.cli generate --format svg
+mermaid generate --format svg
+
+# High-resolution output
+mermaid generate --scale 3 --width 2400
 
 # Scan without generating (dry run)
-python -m src.cli scan --input-dir ./docs
-
-# Watch for changes and auto-regenerate
-python -m src.cli watch --input-dir ./docs
+mermaid scan --input-dir ./docs
 
 # Clean generated diagrams
-python -m src.cli clean --output-dir ./diagrams
+mermaid clean --output-dir ./diagrams
+```
+
+If running from source:
+
+```bash
+python -m src.cli generate --input-dir ./docs
 ```
 
 ### Configuration
@@ -138,7 +155,7 @@ sequenceDiagram
 ```
 ````
 
-Running `python -m src.cli generate --input-dir docs` will create:
+Running `mermaid generate --input-dir docs` will create:
 
 - `diagrams/architecture_0_flowchart.png`
 - `diagrams/architecture_1_sequence.png`
