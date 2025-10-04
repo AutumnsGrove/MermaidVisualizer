@@ -24,6 +24,7 @@ MermaidVisualizer is a Python tool that recursively scans directories for markdo
 - Python 3.10+
 - Node.js (for Mermaid CLI via npx)
 - UV package manager (recommended)
+- Chrome headless shell (for Puppeteer/Mermaid rendering)
 
 ### Install as System-Wide Command
 
@@ -31,6 +32,9 @@ MermaidVisualizer is a Python tool that recursively scans directories for markdo
 # Clone the repository
 git clone <repository-url>
 cd MermaidVisualizer
+
+# Install Chrome headless shell for diagram rendering
+npx puppeteer browsers install chrome-headless-shell
 
 # Install globally with UV (recommended)
 uv tool install --editable .
@@ -216,12 +220,26 @@ Contributions welcome! Please feel free to submit a Pull Request.
 
 ## Troubleshooting
 
+### Chrome/Puppeteer Errors
+
+If you see errors about "Could not find Chrome" or Puppeteer:
+
+```bash
+# Install Chrome headless shell (required for diagram rendering)
+npx puppeteer browsers install chrome-headless-shell
+
+# Verify installation
+ls ~/.cache/puppeteer/
+```
+
+The tool will automatically detect and use the installed Chrome binary.
+
 ### Mermaid CLI Not Found
 
 If you see errors about `mmdc` or Mermaid CLI:
 
 ```bash
-# Install globally
+# Install globally (optional - npx is used by default)
 npm install -g @mermaid-js/mermaid-cli
 
 # Or use npx (automatically used by this tool)
@@ -232,6 +250,7 @@ npx @mermaid-js/mermaid-cli --version
 
 - Check that your Mermaid syntax is valid
 - Try the diagram on [Mermaid Live Editor](https://mermaid.live)
+- Ensure Chrome headless shell is installed (see above)
 - Check logs for specific error messages
 - Ensure Node.js is installed
 

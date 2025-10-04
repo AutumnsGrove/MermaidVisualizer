@@ -82,6 +82,7 @@ def validate_mermaid_syntax(mermaid_content: str) -> Tuple[bool, str]:
             result = subprocess.run(
                 [
                     "/opt/homebrew/bin/npx",
+                    "-y",
                     "@mermaid-js/mermaid-cli",
                     "-i",
                     str(temp_input_path),
@@ -217,6 +218,7 @@ def generate_diagram(
         # Build command with scale and width parameters for high resolution
         cmd = [
             "/opt/homebrew/bin/npx",
+            "-y",
             "@mermaid-js/mermaid-cli",
             "-i",
             str(temp_input_path),
@@ -228,11 +230,18 @@ def generate_diagram(
             str(width),
         ]
 
+        # Set Puppeteer environment variables to use installed Chrome
+        import os
+        env = os.environ.copy()
+        chrome_path = "/Users/mini/.cache/puppeteer/chrome/mac_arm-131.0.6778.204/chrome-mac-arm64/Google Chrome for Testing.app/Contents/MacOS/Google Chrome for Testing"
+        env["PUPPETEER_EXECUTABLE_PATH"] = chrome_path
+
         result = subprocess.run(
             cmd,
             capture_output=True,
             text=True,
             timeout=60,
+            env=env,
         )
 
         if result.returncode != 0:
