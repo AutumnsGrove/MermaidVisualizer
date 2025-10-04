@@ -82,15 +82,59 @@ def validate_output_format(ctx, param, value):
     return value.lower()
 
 
-@click.group()
+@click.group(invoke_without_command=True)
+@click.pass_context
 @click.version_option(version="0.1.0")
-def cli():
+def cli(ctx):
     """
-    MermaidVisualizer - Automated Mermaid diagram extraction and generation.
+    \b
+    ╔══════════════════════════════════════════════════════════════════════════╗
+    ║                        MermaidVisualizer v0.1.0                          ║
+    ║          Automated Mermaid Diagram Extraction & Generation Tool          ║
+    ╚══════════════════════════════════════════════════════════════════════════╝
 
-    Extract Mermaid diagrams from markdown files and generate visual diagrams.
+    Extract Mermaid diagrams from markdown files and generate visual diagrams
+    in PNG or SVG format. Supports recursive directory scanning, multiple
+    diagram types, and automated wiki-style markdown linking.
+
+    \b
+    QUICK START:
+      $ mermaid generate                    # Generate from current directory
+      $ mermaid generate -i ./docs          # Generate from specific directory
+      $ mermaid scan                        # Preview diagrams (dry run)
+      $ mermaid clean                       # Remove generated diagrams
+
+    \b
+    EXAMPLES:
+      # Generate high-resolution PNG diagrams
+      $ mermaid generate -i ./docs -o ./diagrams -s 3 -w 2400
+
+      # Generate SVG diagrams with linked markdown files
+      $ mermaid generate -f svg --create-linked-markdown
+
+      # Scan for diagrams without generating
+      $ mermaid scan -i ./docs --recursive
+
+      # Clean up generated files
+      $ mermaid clean -o ./diagrams --yes
+
+    \b
+    SUPPORTED DIAGRAM TYPES:
+      • Flowcharts (graph, flowchart)
+      • Sequence Diagrams
+      • Class Diagrams
+      • State Diagrams (stateDiagram-v2)
+      • Entity Relationship Diagrams (erDiagram)
+      • Gantt Charts
+      • Pie Charts
+      • User Journey Diagrams
+      • Git Graphs
+      • Mindmaps, Timelines, and more
+
+    Use 'mermaid COMMAND --help' for detailed information on each command.
     """
-    pass
+    if ctx.invoked_subcommand is None:
+        click.echo(ctx.get_help())
 
 
 @cli.command()
@@ -99,7 +143,8 @@ def cli():
     "-i",
     default=".",
     callback=validate_input_directory,
-    help="Input directory to scan for markdown files",
+    help="Input directory to scan for markdown files (default: current directory)",
+    show_default=True,
 )
 @click.option(
     "--output-dir",
@@ -107,43 +152,49 @@ def cli():
     default="./diagrams",
     type=click.Path(),
     help="Output directory for generated diagrams",
+    show_default=True,
 )
 @click.option(
     "--format",
     "-f",
     default="png",
     callback=validate_output_format,
-    help="Output format: png or svg",
+    help="Output format: 'png' or 'svg'",
+    show_default=True,
 )
 @click.option(
     "--scale",
     "-s",
     default=3,
     type=int,
-    help="Scale factor for PNG output (default: 3 for high resolution)",
+    help="Scale factor for PNG output (higher = better quality, larger file)",
+    show_default=True,
 )
 @click.option(
     "--width",
     "-w",
     default=2400,
     type=int,
-    help="Width of output image in pixels (default: 2400)",
+    help="Width of output image in pixels",
+    show_default=True,
 )
 @click.option(
     "--recursive/--no-recursive",
     default=True,
-    help="Recursively scan subdirectories",
+    help="Recursively scan subdirectories for markdown files",
+    show_default=True,
 )
 @click.option(
     "--verbose",
     "-v",
     is_flag=True,
-    help="Enable verbose logging",
+    help="Enable verbose logging with detailed progress information",
 )
 @click.option(
     "--create-linked-markdown/--no-create-linked-markdown",
     default=True,
-    help="Create modified markdown files with wiki-style image links (default: enabled)",
+    help="Create modified markdown files with wiki-style image links [[image.png]]",
+    show_default=True,
 )
 def generate(
     input_dir: Path,
@@ -156,10 +207,42 @@ def generate(
     create_linked_markdown: bool,
 ) -> None:
     """
-    Extract and generate diagrams from markdown files.
+    Extract Mermaid diagrams from markdown files and generate visual diagrams.
 
-    Scans the input directory for Mermaid diagram definitions and generates
-    visual diagrams in the specified format.
+    \b
+    This command scans the input directory for markdown files containing
+    ```mermaid code blocks, extracts them, and generates visual diagrams
+    using the Mermaid CLI tool.
+
+    \b
+    OUTPUT STRUCTURE:
+      When --create-linked-markdown is enabled (default):
+        - Diagrams are saved next to source markdown files
+        - Creates *_linked.md files with embedded image references
+
+      When disabled:
+        - Diagrams are saved to --output-dir in project subdirectories
+        - Generates index.html for easy browsing
+
+    \b
+    EXAMPLES:
+      # Basic usage (current directory)
+      $ mermaid generate
+
+      # Specify input directory
+      $ mermaid generate -i ./docs
+
+      # High-resolution PNG with custom scale
+      $ mermaid generate -s 5 -w 3200
+
+      # Generate SVG diagrams
+      $ mermaid generate -f svg
+
+      # Non-recursive scan
+      $ mermaid generate --no-recursive
+
+      # Disable linked markdown creation
+      $ mermaid generate --no-create-linked-markdown
     """
     setup_logging(verbose)
     logger = logging.getLogger(__name__)
@@ -330,17 +413,19 @@ def generate(
     default=".",
     callback=validate_input_directory,
     help="Input directory to scan for markdown files",
+    show_default=True,
 )
 @click.option(
     "--recursive/--no-recursive",
     default=True,
-    help="Recursively scan subdirectories",
+    help="Recursively scan subdirectories for markdown files",
+    show_default=True,
 )
 @click.option(
     "--verbose",
     "-v",
     is_flag=True,
-    help="Enable verbose logging",
+    help="Enable verbose logging with detailed information",
 )
 def scan(
     input_dir: Path,
@@ -350,7 +435,31 @@ def scan(
     """
     Scan for Mermaid diagrams without generating files (dry run).
 
-    Shows what diagrams would be generated without actually creating them.
+    \b
+    This command performs a dry run, scanning for Mermaid diagrams in markdown
+    files and displaying what would be generated without actually creating any
+    diagram files. Useful for previewing results before running 'generate'.
+
+    \b
+    OUTPUT:
+      Displays a table showing:
+        - Source markdown file name
+        - Diagram type (flowchart, sequence, etc.)
+        - Line range in the source file
+
+    \b
+    EXAMPLES:
+      # Scan current directory
+      $ mermaid scan
+
+      # Scan specific directory
+      $ mermaid scan -i ./docs
+
+      # Scan without recursion
+      $ mermaid scan --no-recursive
+
+      # Verbose output with detailed logging
+      $ mermaid scan -v
     """
     setup_logging(verbose)
     logger = logging.getLogger(__name__)
@@ -415,18 +524,43 @@ def scan(
     default="./diagrams",
     type=click.Path(),
     help="Output directory to clean",
+    show_default=True,
 )
 @click.option(
     "--yes",
     "-y",
     is_flag=True,
-    help="Skip confirmation prompt",
+    help="Skip confirmation prompt and delete immediately",
 )
 def clean(output_dir: str, yes: bool) -> None:
     """
     Remove all generated diagrams from the output directory.
 
-    This will delete all files in the output directory.
+    \b
+    WARNING: This command will delete all files in the specified output
+    directory. By default, you will be prompted for confirmation before
+    deletion. Use --yes to skip the confirmation.
+
+    \b
+    SAFETY:
+      - Only deletes files, not subdirectories
+      - Prompts for confirmation unless --yes is used
+      - Shows count of files before deletion
+      - Safe to run if directory doesn't exist
+
+    \b
+    EXAMPLES:
+      # Clean default output directory (with confirmation)
+      $ mermaid clean
+
+      # Clean specific directory
+      $ mermaid clean -o ./my-diagrams
+
+      # Clean without confirmation prompt
+      $ mermaid clean --yes
+
+      # Clean and skip prompt
+      $ mermaid clean -o ./diagrams -y
     """
     output_path = Path(output_dir).resolve()
 
