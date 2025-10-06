@@ -5,13 +5,84 @@ This module provides functionality to generate PNG and SVG diagrams from Mermaid
 using the mermaid-cli tool (mmdc command).
 """
 
+import glob
 import logging
+import os
 import subprocess
 import tempfile
 from pathlib import Path
-from typing import Tuple
+from typing import Optional, Tuple
 
 logger = logging.getLogger(__name__)
+
+
+def find_chrome_executable() -> Optional[str]:
+    """
+    Automatically detect Chrome/Chromium executable path.
+
+    Searches in common installation locations for Chrome, prioritizing:
+    1. PUPPETEER_EXECUTABLE_PATH environment variable
+    2. ~/.cache/puppeteer/chrome installations (most recent version)
+    3. System Chrome installations
+
+    Returns:
+        Path to Chrome executable if found, None otherwise
+    """
+    # Check environment variable first
+    if "PUPPETEER_EXECUTABLE_PATH" in os.environ:
+        chrome_path = os.environ["PUPPETEER_EXECUTABLE_PATH"]
+        if Path(chrome_path).exists():
+            logger.debug(f"Using Chrome from PUPPETEER_EXECUTABLE_PATH: {chrome_path}")
+            return chrome_path
+
+    # Check puppeteer cache (common for npm/npx installations)
+    home = Path.home()
+    puppeteer_cache = home / ".cache" / "puppeteer" / "chrome"
+
+    if puppeteer_cache.exists():
+        # Find all Chrome installations, sorted by version (newest first)
+        chrome_pattern = str(
+            puppeteer_cache
+            / "*"
+            / "chrome-mac-arm64"
+            / "Google Chrome for Testing.app"
+            / "Contents"
+            / "MacOS"
+            / "Google Chrome for Testing"
+        )
+        chrome_paths = sorted(glob.glob(chrome_pattern), reverse=True)
+
+        if chrome_paths:
+            logger.debug(f"Found Chrome in puppeteer cache: {chrome_paths[0]}")
+            return chrome_paths[0]
+
+    # Check for system Chrome installations (macOS)
+    system_chrome_paths = [
+        "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
+        "/Applications/Chromium.app/Contents/MacOS/Chromium",
+    ]
+
+    for chrome_path in system_chrome_paths:
+        if Path(chrome_path).exists():
+            logger.debug(f"Found system Chrome: {chrome_path}")
+            return chrome_path
+
+    # Check for Linux Chrome installations
+    linux_chrome_paths = [
+        "/usr/bin/google-chrome",
+        "/usr/bin/chromium",
+        "/usr/bin/chromium-browser",
+    ]
+
+    for chrome_path in linux_chrome_paths:
+        if Path(chrome_path).exists():
+            logger.debug(f"Found Linux Chrome: {chrome_path}")
+            return chrome_path
+
+    logger.warning(
+        "Could not find Chrome executable. Puppeteer will attempt auto-detection."
+    )
+    return None
 
 
 def validate_mermaid_syntax(mermaid_content: str) -> Tuple[bool, str]:
@@ -79,6 +150,12 @@ def validate_mermaid_syntax(mermaid_content: str) -> Tuple[bool, str]:
             temp_output_path = Path(temp_output.name)
 
         try:
+            # Set up environment with Chrome path if found
+            env = os.environ.copy()
+            chrome_path = find_chrome_executable()
+            if chrome_path:
+                env["PUPPETEER_EXECUTABLE_PATH"] = chrome_path
+
             result = subprocess.run(
                 [
                     "/opt/homebrew/bin/npx",
@@ -92,6 +169,7 @@ def validate_mermaid_syntax(mermaid_content: str) -> Tuple[bool, str]:
                 capture_output=True,
                 text=True,
                 timeout=30,
+                env=env,
             )
 
             if result.returncode != 0:
@@ -129,7 +207,11 @@ def validate_mermaid_syntax(mermaid_content: str) -> Tuple[bool, str]:
 
 
 def generate_diagram(
-    mermaid_content: str, output_path: Path, format: str = "png", scale: int = 3, width: int = 2400
+    mermaid_content: str,
+    output_path: Path,
+    format: str = "png",
+    scale: int = 3,
+    width: int = 2400,
 ) -> bool:
     """
     Generate a diagram image from Mermaid syntax.
@@ -231,10 +313,15 @@ def generate_diagram(
         ]
 
         # Set Puppeteer environment variables to use installed Chrome
-        import os
         env = os.environ.copy()
-        chrome_path = "/Users/mini/.cache/puppeteer/chrome/mac_arm-131.0.6778.204/chrome-mac-arm64/Google Chrome for Testing.app/Contents/MacOS/Google Chrome for Testing"
-        env["PUPPETEER_EXECUTABLE_PATH"] = chrome_path
+        chrome_path = find_chrome_executable()
+        if chrome_path:
+            env["PUPPETEER_EXECUTABLE_PATH"] = chrome_path
+            logger.debug(f"Using Chrome executable: {chrome_path}")
+        else:
+            logger.debug(
+                "No Chrome executable found, relying on Puppeteer auto-detection"
+            )
 
         result = subprocess.run(
             cmd,
