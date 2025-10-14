@@ -69,6 +69,38 @@ def find_markdown_files(directory: Path, recursive: bool = True) -> List[Path]:
     return sorted(set(markdown_files))
 
 
+def get_markdown_files_from_path(path: Path, recursive: bool = True) -> List[Path]:
+    """
+    Get markdown files from a path (file or directory).
+
+    Args:
+        path: Path to a markdown file or directory containing markdown files
+        recursive: If True and path is a directory, search subdirectories recursively
+
+    Returns:
+        List of Path objects pointing to markdown files
+
+    Raises:
+        FileNotFoundError: If the path does not exist
+        ValueError: If the path is a file but not a markdown file
+        PermissionError: If the path cannot be accessed
+    """
+    if not path.exists():
+        raise FileNotFoundError(f"Path not found: {path}")
+
+    if path.is_file():
+        # Check if it's a markdown file
+        if path.suffix.lower() in [".md", ".markdown"]:
+            return [path]
+        else:
+            raise ValueError(f"File is not a markdown file: {path}")
+    elif path.is_dir():
+        # Use existing function for directories
+        return find_markdown_files(path, recursive=recursive)
+    else:
+        raise ValueError(f"Path is neither a file nor a directory: {path}")
+
+
 def create_output_filename(
     source_file: Path, index: int, diagram_type: str, format: str
 ) -> str:

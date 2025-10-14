@@ -62,13 +62,17 @@ def setup_logging(verbose: bool = False) -> None:
     )
 
 
-def validate_input_directory(ctx, param, value):
-    """Validate that input directory exists."""
+def validate_input_path(ctx, param, value):
+    """Validate that input path (file or directory) exists."""
     path = Path(value).resolve()
     if not path.exists():
-        raise click.BadParameter(f"Directory does not exist: {value}")
-    if not path.is_dir():
-        raise click.BadParameter(f"Not a directory: {value}")
+        raise click.BadParameter(f"Path does not exist: {value}")
+    if path.is_file() and not path.suffix.lower() in [".md", ".markdown"]:
+        raise click.BadParameter(
+            f"File must be a markdown file (.md or .markdown): {value}"
+        )
+    if not path.is_file() and not path.is_dir():
+        raise click.BadParameter(f"Path must be a file or directory: {value}")
     return path
 
 
@@ -100,19 +104,23 @@ def cli(ctx):
     \b
     QUICK START:
       $ mermaid generate                    # Generate from current directory
-      $ mermaid generate -i ./docs          # Generate from specific directory
+      $ mermaid generate -i ./docs          # Generate from a directory
+      $ mermaid generate -i ./doc.md        # Generate from a single file
       $ mermaid scan                        # Preview diagrams (dry run)
       $ mermaid clean                       # Remove generated diagrams
 
     \b
     EXAMPLES:
-      # Generate high-resolution PNG diagrams
+      # Generate from a single file
+      $ mermaid generate -i ./docs/architecture.md
+
+      # Generate high-resolution PNG diagrams from a directory
       $ mermaid generate -i ./docs -o ./diagrams -s 3 -w 2400
 
       # Generate SVG diagrams with linked markdown files
       $ mermaid generate -f svg --create-linked-markdown
 
-      # Scan for diagrams without generating
+      # Scan a file or directory without generating
       $ mermaid scan -i ./docs --recursive
 
       # Clean up generated files
@@ -142,8 +150,8 @@ def cli(ctx):
     "--input-dir",
     "-i",
     default=".",
-    callback=validate_input_directory,
-    help="Input directory to scan for markdown files (default: current directory)",
+    callback=validate_input_path,
+    help="Input file or directory to process (default: current directory)",
     show_default=True,
 )
 @click.option(
@@ -210,9 +218,9 @@ def generate(
     Extract Mermaid diagrams from markdown files and generate visual diagrams.
 
     \b
-    This command scans the input directory for markdown files containing
-    ```mermaid code blocks, extracts them, and generates visual diagrams
-    using the Mermaid CLI tool.
+    This command processes either a single markdown file or a directory
+    containing markdown files with ```mermaid code blocks, extracts them,
+    and generates visual diagrams using the Mermaid CLI tool.
 
     \b
     OUTPUT STRUCTURE:
@@ -229,7 +237,10 @@ def generate(
       # Basic usage (current directory)
       $ mermaid generate
 
-      # Specify input directory
+      # Process a single markdown file
+      $ mermaid generate -i ./docs/architecture.md
+
+      # Process an entire directory
       $ mermaid generate -i ./docs
 
       # High-resolution PNG with custom scale
@@ -238,7 +249,7 @@ def generate(
       # Generate SVG diagrams
       $ mermaid generate -f svg
 
-      # Non-recursive scan
+      # Non-recursive directory scan
       $ mermaid generate --no-recursive
 
       # Disable linked markdown creation
@@ -262,10 +273,14 @@ def generate(
         logger.info(f"Output directory: {output_path}")
 
         # Find markdown files
-        console.print(f"\n[cyan]Scanning:[/cyan] {input_dir}")
-        console.print(f"[cyan]Recursive:[/cyan] {'Yes' if recursive else 'No'}")
+        input_type = "file" if input_dir.is_file() else "directory"
+        console.print(f"\n[cyan]Input:[/cyan] {input_dir} ({input_type})")
+        if input_dir.is_dir():
+            console.print(f"[cyan]Recursive:[/cyan] {'Yes' if recursive else 'No'}")
 
-        md_files = file_handler.find_markdown_files(input_dir, recursive=recursive)
+        md_files = file_handler.get_markdown_files_from_path(
+            input_dir, recursive=recursive
+        )
 
         if not md_files:
             console.print("\n[yellow]No markdown files found.[/yellow]")
@@ -307,7 +322,9 @@ def generate(
                         diagram_output_dir = md_file.parent
                     else:
                         # Get project name and create project-specific subdirectory
-                        project_name = file_handler.get_project_name(md_file, levels_up=3)
+                        project_name = file_handler.get_project_name(
+                            md_file, levels_up=3
+                        )
                         diagram_output_dir = output_path / project_name
 
                     file_handler.ensure_output_dir(diagram_output_dir)
@@ -351,9 +368,13 @@ def generate(
                                     md_file, diagram_files, output_in_source_dir=True
                                 )
                                 if linked_file:
-                                    logger.debug(f"Created linked markdown: {linked_file.name}")
+                                    logger.debug(
+                                        f"Created linked markdown: {linked_file.name}"
+                                    )
                             except Exception as e:
-                                logger.warning(f"Failed to create linked markdown for {md_file.name}: {str(e)}")
+                                logger.warning(
+                                    f"Failed to create linked markdown for {md_file.name}: {str(e)}"
+                                )
 
                     result.files_processed += 1
 
@@ -411,8 +432,8 @@ def generate(
     "--input-dir",
     "-i",
     default=".",
-    callback=validate_input_directory,
-    help="Input directory to scan for markdown files",
+    callback=validate_input_path,
+    help="Input file or directory to scan for Mermaid diagrams",
     show_default=True,
 )
 @click.option(
@@ -436,9 +457,10 @@ def scan(
     Scan for Mermaid diagrams without generating files (dry run).
 
     \b
-    This command performs a dry run, scanning for Mermaid diagrams in markdown
-    files and displaying what would be generated without actually creating any
-    diagram files. Useful for previewing results before running 'generate'.
+    This command performs a dry run, scanning a single markdown file or
+    directory for Mermaid diagrams and displaying what would be generated
+    without actually creating any diagram files. Useful for previewing
+    results before running 'generate'.
 
     \b
     OUTPUT:
@@ -452,10 +474,13 @@ def scan(
       # Scan current directory
       $ mermaid scan
 
-      # Scan specific directory
+      # Scan a single file
+      $ mermaid scan -i ./docs/architecture.md
+
+      # Scan a specific directory
       $ mermaid scan -i ./docs
 
-      # Scan without recursion
+      # Scan directory without recursion
       $ mermaid scan --no-recursive
 
       # Verbose output with detailed logging
@@ -473,10 +498,16 @@ def scan(
 
     try:
         # Find markdown files
-        console.print(f"\n[cyan]Scanning:[/cyan] {input_dir}")
-        console.print(f"[cyan]Recursive:[/cyan] {'Yes' if recursive else 'No'}\n")
+        input_type = "file" if input_dir.is_file() else "directory"
+        console.print(f"\n[cyan]Input:[/cyan] {input_dir} ({input_type})")
+        if input_dir.is_dir():
+            console.print(f"[cyan]Recursive:[/cyan] {'Yes' if recursive else 'No'}\n")
+        else:
+            console.print()
 
-        md_files = file_handler.find_markdown_files(input_dir, recursive=recursive)
+        md_files = file_handler.get_markdown_files_from_path(
+            input_dir, recursive=recursive
+        )
 
         if not md_files:
             console.print("[yellow]No markdown files found.[/yellow]")
