@@ -54,3 +54,4 @@ diagrams/
 
 # Config overrides
 config.local.yaml
+uv.lock
