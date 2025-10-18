@@ -118,7 +118,7 @@ def cli(ctx):
       $ mermaid generate -i ./docs -o ./diagrams -s 3 -w 2400
 
       # Generate SVG diagrams with linked markdown files
-      $ mermaid generate -f svg --create-linked-markdown
+      $ mermaid generate -f svg -l
 
       # Scan a file or directory without generating
       $ mermaid scan -i ./docs --recursive
@@ -199,8 +199,9 @@ def cli(ctx):
     help="Enable verbose logging with detailed progress information",
 )
 @click.option(
-    "--create-linked-markdown/--no-create-linked-markdown",
-    default=True,
+    "-l",
+    "--linked-file",
+    is_flag=True,
     help="Create modified markdown files with wiki-style image links [[image.png]]",
     show_default=True,
 )
@@ -212,7 +213,7 @@ def generate(
     width: int,
     recursive: bool,
     verbose: bool,
-    create_linked_markdown: bool,
+    linked_file: bool,
 ) -> None:
     """
     Extract Mermaid diagrams from markdown files and generate visual diagrams.
@@ -224,11 +225,11 @@ def generate(
 
     \b
     OUTPUT STRUCTURE:
-      When --create-linked-markdown is enabled (default):
+      When -l/--linked-file is used:
         - Diagrams are saved next to source markdown files
         - Creates *_linked.md files with embedded image references
 
-      When disabled:
+      When not used (default):
         - Diagrams are saved to --output-dir in project subdirectories
         - Generates index.html for easy browsing
 
@@ -252,8 +253,8 @@ def generate(
       # Non-recursive directory scan
       $ mermaid generate --no-recursive
 
-      # Disable linked markdown creation
-      $ mermaid generate --no-create-linked-markdown
+      # Create linked markdown files
+      $ mermaid generate -l
     """
     setup_logging(verbose)
     logger = logging.getLogger(__name__)
@@ -316,8 +317,8 @@ def generate(
                     # Generate each diagram
                     diagram_files = []
 
-                    # Determine output directory based on create_linked_markdown option
-                    if create_linked_markdown:
+                    # Determine output directory based on linked_file option
+                    if linked_file:
                         # Output diagrams to the source file's directory
                         diagram_output_dir = md_file.parent
                     else:
@@ -362,7 +363,7 @@ def generate(
                         mappings.append(mapping)
 
                         # Create linked markdown if requested
-                        if create_linked_markdown:
+                        if linked_file:
                             try:
                                 linked_file = file_handler.create_linked_markdown(
                                     md_file, diagram_files, output_in_source_dir=True
