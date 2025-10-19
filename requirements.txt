@@ -17,3 +17,6 @@ watchdog>=3.0.0
 
 # Rich CLI Output
 rich>=13.7.0
+
+# HTTP Requests (for GitHub Gist fetching)
+requests>=2.31.0

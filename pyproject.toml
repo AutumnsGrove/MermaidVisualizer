@@ -9,7 +9,7 @@ description = "Automated extraction and generation of Mermaid diagrams from mark
 readme = "README.md"
 license = {text = "MIT"}
 authors = [
-    {name = "Autumn", email = "autumn@example.com"}
+    {name = "Autumn", email = "autumnbrown23@pm.me"}
 ]
 requires-python = ">=3.10"
 classifiers = [
@@ -26,6 +26,7 @@ dependencies = [
     "pyyaml>=6.0",
     "watchdog>=3.0.0",
     "rich>=13.7.0",
+    "requests>=2.31.0",
 ]
 
 [project.optional-dependencies]

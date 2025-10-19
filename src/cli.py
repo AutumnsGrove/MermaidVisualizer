@@ -6,9 +6,10 @@ from markdown files and generating visualizations.
 """
 
 import logging
+import os
 import sys
 from pathlib import Path
-from typing import List
+from typing import List, Optional
 from dataclasses import dataclass
 
 import click
@@ -29,6 +30,7 @@ from rich.logging import RichHandler
 from . import extractor
 from . import generator
 from . import file_handler
+from . import gist_handler
 
 console = Console()
 
@@ -63,7 +65,12 @@ def setup_logging(verbose: bool = False) -> None:
 
 
 def validate_input_path(ctx, param, value):
-    """Validate that input path (file or directory) exists."""
+    """Validate that input path (file or directory) exists, or is a valid gist URL."""
+    # Check if it's a gist URL - if so, skip path validation
+    if gist_handler.is_gist_url(str(value)):
+        return value  # Return the URL string, we'll handle it later
+
+    # Otherwise, validate as a path
     path = Path(value).resolve()
     if not path.exists():
         raise click.BadParameter(f"Path does not exist: {value}")
@@ -211,6 +218,20 @@ def cli(ctx):
     help="Use intelligent, descriptive filenames based on diagram context (headers, titles)",
     show_default=True,
 )
+@click.option(
+    "--gist",
+    "-g",
+    type=str,
+    default=None,
+    help="GitHub Gist URL to fetch markdown files from",
+)
+@click.option(
+    "--github-token",
+    type=str,
+    default=None,
+    envvar="GITHUB_TOKEN",
+    help="GitHub personal access token for private gists and higher rate limits (can also set GITHUB_TOKEN env var)",
+)
 def generate(
     input_dir: Path,
     output_dir: str,
@@ -221,14 +242,29 @@ def generate(
     verbose: bool,
     linked_file: bool,
     intelligent_names: bool,
+    gist: Optional[str],
+    github_token: Optional[str],
 ) -> None:
     """
     Extract Mermaid diagrams from markdown files and generate visual diagrams.
 
     \b
-    This command processes either a single markdown file or a directory
-    containing markdown files with ```mermaid code blocks, extracts them,
-    and generates visual diagrams using the Mermaid CLI tool.
+    This command processes either a single markdown file, a directory
+    containing markdown files, or a GitHub Gist with markdown files.
+    It extracts ```mermaid code blocks and generates visual diagrams
+    using the Mermaid CLI tool.
+
+    \b
+    INPUT SOURCES:
+      Local files/directories:
+        - Single markdown file: -i ./docs/architecture.md
+        - Directory: -i ./docs
+        - Current directory (default): mermaid generate
+
+      GitHub Gists (public or private):
+        - Auto-detect: -i https://gist.github.com/user/abc123
+        - Explicit flag: --gist https://gist.github.com/user/abc123
+        - Private gists: Add --github-token or set GITHUB_TOKEN env var
 
     \b
     OUTPUT STRUCTURE:
@@ -262,6 +298,16 @@ def generate(
       # Process an entire directory
       $ mermaid generate -i ./docs
 
+      # Fetch from a public GitHub Gist (auto-detect)
+      $ mermaid generate -i https://gist.github.com/user/abc123
+
+      # Fetch from a Gist with explicit flag
+      $ mermaid generate --gist https://gist.github.com/user/abc123
+
+      # Fetch from a private Gist
+      $ mermaid generate -g https://gist.github.com/user/abc123 --github-token ghp_xxx
+      $ export GITHUB_TOKEN=ghp_xxx && mermaid generate -i https://gist.github.com/user/abc123
+
       # Use simple filenames instead of intelligent names
       $ mermaid generate --simple-names
 
@@ -294,15 +340,50 @@ def generate(
         file_handler.ensure_output_dir(output_path)
         logger.info(f"Output directory: {output_path}")
 
-        # Find markdown files
-        input_type = "file" if input_dir.is_file() else "directory"
-        console.print(f"\n[cyan]Input:[/cyan] {input_dir} ({input_type})")
-        if input_dir.is_dir():
-            console.print(f"[cyan]Recursive:[/cyan] {'Yes' if recursive else 'No'}")
+        # Handle GitHub Gist input
+        gist_url = None
 
-        md_files = file_handler.get_markdown_files_from_path(
-            input_dir, recursive=recursive
-        )
+        # Check if --gist flag was used
+        if gist:
+            gist_url = gist
+            logger.info(f"Using gist from --gist flag: {gist_url}")
+        # Auto-detect if input_dir string looks like a gist URL
+        elif gist_handler.is_gist_url(str(input_dir)):
+            gist_url = str(input_dir)
+            logger.info(f"Auto-detected gist URL: {gist_url}")
+
+        # If we have a gist URL, fetch it
+        if gist_url:
+            try:
+                console.print(f"\n[cyan]Fetching from GitHub Gist:[/cyan] {gist_url}")
+                md_files = gist_handler.fetch_gist_files(gist_url, github_token)
+
+                if not md_files:
+                    console.print("\n[yellow]No markdown files found in gist.[/yellow]")
+                    return
+
+                console.print(f"[green]✓[/green] Fetched {len(md_files)} markdown file(s) from gist\n")
+
+            except ValueError as e:
+                console.print(f"\n[bold red]Invalid gist:[/bold red] {e}")
+                sys.exit(1)
+            except ConnectionError as e:
+                console.print(f"\n[bold red]Connection error:[/bold red] {e}")
+                sys.exit(1)
+            except PermissionError as e:
+                console.print(f"\n[bold red]Permission denied:[/bold red] {e}")
+                console.print("[yellow]Tip:[/yellow] Use --github-token for private gists")
+                sys.exit(1)
+        else:
+            # Original logic: find markdown files from input_dir
+            input_type = "file" if input_dir.is_file() else "directory"
+            console.print(f"\n[cyan]Input:[/cyan] {input_dir} ({input_type})")
+            if input_dir.is_dir():
+                console.print(f"[cyan]Recursive:[/cyan] {'Yes' if recursive else 'No'}")
+
+            md_files = file_handler.get_markdown_files_from_path(
+                input_dir, recursive=recursive
+            )
 
         if not md_files:
             console.print("\n[yellow]No markdown files found.[/yellow]")
