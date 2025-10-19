@@ -6,10 +6,35 @@ creating output filenames, and tracking diagram mappings.
 """
 
 import json
+import re
 from dataclasses import dataclass, asdict
 from datetime import datetime
 from pathlib import Path
 from typing import List, Optional
+
+# Import MermaidDiagram for type hints
+from .extractor import MermaidDiagram
+
+
+# Diagram type prefix mappings for intelligent filename generation
+DIAGRAM_TYPE_PREFIXES = {
+    "sequenceDiagram": "seq",
+    "flowchart": "graph",
+    "graph": "graph",
+    "classDiagram": "class",
+    "stateDiagram": "state",
+    "erDiagram": "er",
+    "gantt": "gantt",
+    "pie": "pie",
+    "gitGraph": "git",
+    "journey": "journey",
+    "mindmap": "mind",
+    "timeline": "time",
+    "quadrantChart": "quad",
+    "requirementDiagram": "req",
+    "c4Diagram": "c4",
+    "unknown": "diagram",
+}
 
 
 @dataclass
@@ -26,6 +51,168 @@ class DiagramMapping:
     source_file: str
     diagram_files: List[str]
     timestamp: str
+
+
+def sanitize_filename(text: str, max_length: int = 50) -> str:
+    """
+    Convert a string into a safe, filesystem-compatible filename.
+
+    Args:
+        text: The text to sanitize
+        max_length: Maximum length of the resulting filename (default: 50)
+
+    Returns:
+        A sanitized filename string with safe characters only
+
+    Example:
+        >>> sanitize_filename("User Authentication Flow")
+        'user_authentication_flow'
+        >>> sanitize_filename("Class: User/Admin (v2.0)")
+        'class_user_admin_v2_0'
+        >>> sanitize_filename("")
+        'untitled'
+    """
+    if not text or not text.strip():
+        return "untitled"
+
+    # Convert to lowercase
+    sanitized = text.lower()
+
+    # Replace spaces with underscores
+    sanitized = sanitized.replace(" ", "_")
+
+    # Remove or replace special characters (keep only alphanumeric, underscores, hyphens)
+    # Allow unicode letters and digits
+    sanitized = re.sub(r"[^\w\-]", "_", sanitized)
+
+    # Replace multiple consecutive underscores/hyphens with a single underscore
+    sanitized = re.sub(r"[_\-]+", "_", sanitized)
+
+    # Remove leading/trailing underscores or hyphens
+    sanitized = sanitized.strip("_-")
+
+    # If still empty after sanitization, use fallback
+    if not sanitized:
+        return "untitled"
+
+    # Truncate to max length
+    if len(sanitized) > max_length:
+        sanitized = sanitized[:max_length].rstrip("_-")
+
+    return sanitized
+
+
+def generate_descriptive_filename(
+    diagram: MermaidDiagram, format: str = "png", use_prefixes: bool = True
+) -> str:
+    """
+    Generate an intelligent, descriptive filename for a diagram based on its metadata.
+
+    The function prioritizes diagram metadata in the following order:
+    1. preceding_header (markdown header before the diagram)
+    2. diagram_title (title extracted from diagram content)
+    3. Fallback to diagram type prefix + index
+
+    Args:
+        diagram: MermaidDiagram object containing metadata
+        format: Output file format extension (default: "png")
+        use_prefixes: If True, prepend diagram type prefix to all filenames (default: True)
+
+    Returns:
+        A descriptive filename string with the specified format extension
+
+    Example:
+        >>> diagram = MermaidDiagram(
+        ...     content="flowchart TD\\n    A[Start]",
+        ...     source_file=Path("doc.md"),
+        ...     start_line=1,
+        ...     end_line=5,
+        ...     diagram_type="flowchart",
+        ...     index=0,
+        ...     preceding_header="User Authentication",
+        ...     diagram_title=None
+        ... )
+        >>> generate_descriptive_filename(diagram, "png", True)
+        'graph_user_authentication.png'
+    """
+    # Get the diagram type prefix
+    diagram_prefix = DIAGRAM_TYPE_PREFIXES.get(diagram.diagram_type, "diagram")
+
+    # Determine base name from metadata (in priority order)
+    base_name = None
+
+    if diagram.preceding_header:
+        # Use the preceding header as the primary source
+        base_name = sanitize_filename(diagram.preceding_header)
+    elif diagram.diagram_title:
+        # Fall back to diagram title
+        base_name = sanitize_filename(diagram.diagram_title)
+
+    # If we have a base name from metadata
+    if base_name and base_name != "untitled":
+        if use_prefixes:
+            filename = f"{diagram_prefix}_{base_name}"
+        else:
+            filename = base_name
+    else:
+        # Fallback to type + index
+        filename = f"{diagram_prefix}_{diagram.index}"
+
+    # Append format extension
+    return f"{filename}.{format}"
+
+
+def resolve_filename_conflicts(filenames: List[str]) -> List[str]:
+    """
+    Resolve duplicate filenames by appending numeric suffixes.
+
+    Detects duplicate filenames in the list and appends _2, _3, etc.
+    to make them unique. The suffix is added before the file extension.
+
+    Args:
+        filenames: List of filenames (potentially with duplicates)
+
+    Returns:
+        List of unique filenames in the same order, with conflicts resolved
+
+    Example:
+        >>> resolve_filename_conflicts([
+        ...     "seq_auth.png",
+        ...     "seq_auth.png",
+        ...     "graph_flow.svg",
+        ...     "seq_auth.png"
+        ... ])
+        ['seq_auth.png', 'seq_auth_2.png', 'graph_flow.svg', 'seq_auth_3.png']
+    """
+    if not filenames:
+        return []
+
+    # Track how many times we've seen each base filename
+    seen_counts = {}
+    result = []
+
+    for filename in filenames:
+        # Split filename into base and extension
+        path = Path(filename)
+        base = path.stem  # filename without extension
+        ext = path.suffix  # extension with dot
+
+        # Track occurrences
+        if filename not in seen_counts:
+            seen_counts[filename] = 0
+
+        seen_counts[filename] += 1
+        count = seen_counts[filename]
+
+        if count == 1:
+            # First occurrence - use original name
+            result.append(filename)
+        else:
+            # Duplicate - append numeric suffix before extension
+            new_filename = f"{base}_{count}{ext}"
+            result.append(new_filename)
+
+    return result
 
 
 def find_markdown_files(directory: Path, recursive: bool = True) -> List[Path]:
@@ -102,24 +289,55 @@ def get_markdown_files_from_path(path: Path, recursive: bool = True) -> List[Pat
 
 
 def create_output_filename(
-    source_file: Path, index: int, diagram_type: str, format: str
+    source_file: Path,
+    index: int,
+    diagram_type: str,
+    format: str,
+    use_intelligent_naming: bool = False,
+    diagram: Optional[MermaidDiagram] = None,
 ) -> str:
     """
     Generate a standardized output filename for a diagram.
+
+    This function supports both legacy filename generation (source_index_type.format)
+    and new intelligent naming based on diagram metadata.
 
     Args:
         source_file: The source markdown file
         index: The index of the diagram within the source file
         diagram_type: The type of Mermaid diagram (e.g., 'flowchart', 'sequence')
         format: The output format (e.g., 'png', 'svg')
+        use_intelligent_naming: If True, use metadata-based naming (requires diagram parameter)
+        diagram: MermaidDiagram object (required if use_intelligent_naming is True)
 
     Returns:
         Formatted filename string
 
     Example:
+        >>> # Legacy naming
         >>> create_output_filename(Path('architecture.md'), 0, 'flowchart', 'png')
         'architecture_0_flowchart.png'
+        >>> # Intelligent naming
+        >>> diagram = MermaidDiagram(...)  # with preceding_header="User Auth"
+        >>> create_output_filename(
+        ...     Path('architecture.md'), 0, 'flowchart', 'png',
+        ...     use_intelligent_naming=True, diagram=diagram
+        ... )
+        'graph_user_auth.png'
+
+    Note:
+        When use_intelligent_naming=False (default), this function maintains
+        backward compatibility with existing code. For new intelligent naming,
+        consider using generate_descriptive_filename() directly.
     """
+    if use_intelligent_naming:
+        if diagram is None:
+            raise ValueError(
+                "diagram parameter is required when use_intelligent_naming=True"
+            )
+        return generate_descriptive_filename(diagram, format=format, use_prefixes=True)
+
+    # Legacy naming: source_index_type.format
     source_name = source_file.stem  # Get filename without extension
     return f"{source_name}_{index}_{diagram_type}.{format}"
 

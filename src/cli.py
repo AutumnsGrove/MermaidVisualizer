@@ -205,6 +205,12 @@ def cli(ctx):
     help="Create modified markdown files with wiki-style image links [[image.png]]",
     show_default=True,
 )
+@click.option(
+    "--intelligent-names/--simple-names",
+    default=True,
+    help="Use intelligent, descriptive filenames based on diagram context (headers, titles)",
+    show_default=True,
+)
 def generate(
     input_dir: Path,
     output_dir: str,
@@ -214,6 +220,7 @@ def generate(
     recursive: bool,
     verbose: bool,
     linked_file: bool,
+    intelligent_names: bool,
 ) -> None:
     """
     Extract Mermaid diagrams from markdown files and generate visual diagrams.
@@ -234,6 +241,17 @@ def generate(
         - Generates index.html for easy browsing
 
     \b
+    FILENAME GENERATION:
+      --intelligent-names (default):
+        - Uses markdown headers and diagram titles for descriptive names
+        - Examples: graph_user_authentication.png, seq_login_flow.png
+        - Automatically resolves duplicate names with numeric suffixes
+
+      --simple-names:
+        - Uses traditional source_index_type.format naming
+        - Example: architecture_0_flowchart.png
+
+    \b
     EXAMPLES:
       # Basic usage (current directory)
       $ mermaid generate
@@ -244,11 +262,14 @@ def generate(
       # Process an entire directory
       $ mermaid generate -i ./docs
 
+      # Use simple filenames instead of intelligent names
+      $ mermaid generate --simple-names
+
       # High-resolution PNG with custom scale
       $ mermaid generate -s 5 -w 3200
 
-      # Generate SVG diagrams
-      $ mermaid generate -f svg
+      # Generate SVG diagrams with intelligent naming
+      $ mermaid generate -f svg --intelligent-names
 
       # Non-recursive directory scan
       $ mermaid generate --no-recursive
@@ -330,13 +351,40 @@ def generate(
 
                     file_handler.ensure_output_dir(diagram_output_dir)
 
-                    for diagram in diagrams:
-                        output_filename = file_handler.create_output_filename(
-                            diagram.source_file,
-                            diagram.index,
-                            diagram.diagram_type,
-                            format,
+                    # Generate all filenames first, then resolve conflicts
+                    if intelligent_names:
+                        # Use intelligent naming with context from headers/titles
+                        output_filenames = [
+                            file_handler.create_output_filename(
+                                diagram.source_file,
+                                diagram.index,
+                                diagram.diagram_type,
+                                format,
+                                use_intelligent_naming=True,
+                                diagram=diagram,
+                            )
+                            for diagram in diagrams
+                        ]
+                        # Resolve any duplicate filenames
+                        output_filenames = file_handler.resolve_filename_conflicts(
+                            output_filenames
                         )
+                    else:
+                        # Use simple naming (source_index_type.format)
+                        # No conflict resolution needed as index makes them unique
+                        output_filenames = [
+                            file_handler.create_output_filename(
+                                diagram.source_file,
+                                diagram.index,
+                                diagram.diagram_type,
+                                format,
+                                use_intelligent_naming=False,
+                            )
+                            for diagram in diagrams
+                        ]
+
+                    # Generate diagrams with resolved filenames
+                    for diagram, output_filename in zip(diagrams, output_filenames):
                         output_file = diagram_output_dir / output_filename
 
                         success = generator.generate_diagram(
