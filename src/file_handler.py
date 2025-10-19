@@ -550,7 +550,10 @@ def create_linked_markdown(
 
 def generate_index_html(mappings: List[DiagramMapping], output_dir: Path) -> None:
     """
-    Generate an index.html file showing all diagrams with source links.
+    Generate an interactive index.html file with lightbox gallery for viewing diagrams.
+
+    Creates a beautiful, mobile-friendly gallery with zoom capabilities using GLightbox.
+    Features include click-to-zoom, touch gestures, keyboard navigation, and responsive design.
 
     Args:
         mappings: List of DiagramMapping objects
@@ -566,115 +569,360 @@ def generate_index_html(mappings: List[DiagramMapping], output_dir: Path) -> Non
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mermaid Diagram Index</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+    <meta name="description" content="Interactive gallery of Mermaid diagrams with zoom and mobile support">
+    <title>Mermaid Diagram Gallery</title>
+
+    <!-- GLightbox CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/glightbox@3.2.0/dist/css/glightbox.min.css">
+
     <style>
+        * {
+            box-sizing: border-box;
+        }
+
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Helvetica Neue', sans-serif;
             line-height: 1.6;
-            max-width: 1200px;
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1400px;
             margin: 0 auto;
             padding: 20px;
-            background-color: #f5f5f5;
         }
+
+        header {
+            text-align: center;
+            padding: 40px 20px;
+            color: white;
+            margin-bottom: 30px;
+        }
+
         h1 {
-            color: #333;
-            border-bottom: 3px solid #007acc;
-            padding-bottom: 10px;
+            font-size: 2.5em;
+            margin: 0 0 10px 0;
+            font-weight: 700;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
         }
+
+        .subtitle {
+            font-size: 1.1em;
+            opacity: 0.9;
+            font-weight: 300;
+        }
+
         .source-section {
             background: white;
-            margin: 20px 0;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin: 30px 0;
+            padding: 30px;
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
         }
+
+        .source-section:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 15px 40px rgba(0,0,0,0.25);
+        }
+
         .source-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 15px;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #f0f0f0;
+            flex-wrap: wrap;
+            gap: 10px;
         }
+
         .source-file {
+            font-size: 1.4em;
+            font-weight: 600;
+            color: #667eea;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .source-file::before {
+            content: "📄";
             font-size: 1.2em;
-            font-weight: bold;
-            color: #007acc;
         }
+
         .timestamp {
-            color: #666;
+            color: #888;
             font-size: 0.9em;
+            font-weight: 400;
         }
+
+        .source-path {
+            margin-bottom: 20px;
+            padding: 12px 16px;
+            background: #f8f9fa;
+            border-left: 4px solid #667eea;
+            border-radius: 4px;
+            font-family: 'Monaco', 'Courier New', monospace;
+            font-size: 0.9em;
+            color: #555;
+            overflow-x: auto;
+        }
+
         .diagrams-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-            gap: 20px;
-            margin-top: 15px;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 25px;
+            margin-top: 20px;
         }
+
         .diagram-card {
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            padding: 10px;
             background: #fafafa;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+            cursor: pointer;
+            position: relative;
         }
+
+        .diagram-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+        }
+
+        .diagram-card::after {
+            content: "🔍";
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: rgba(255,255,255,0.95);
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2em;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            pointer-events: none;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+        }
+
+        .diagram-card:hover::after {
+            opacity: 1;
+        }
+
+        .diagram-image-wrapper {
+            background: white;
+            padding: 15px;
+            min-height: 200px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
         .diagram-card img {
             max-width: 100%;
             height: auto;
+            display: block;
             border-radius: 4px;
         }
+
         .diagram-filename {
-            margin-top: 8px;
-            font-size: 0.9em;
-            color: #555;
-            word-break: break-all;
+            padding: 15px;
+            font-size: 0.85em;
+            color: #666;
+            background: white;
+            border-top: 1px solid #eee;
+            font-weight: 500;
+            word-break: break-word;
         }
+
         .no-diagrams {
             color: #999;
             font-style: italic;
+            text-align: center;
+            padding: 40px;
+            font-size: 1.1em;
+        }
+
+        .stats {
+            background: rgba(255,255,255,0.2);
+            color: white;
+            padding: 15px 25px;
+            border-radius: 50px;
+            display: inline-block;
+            margin-top: 15px;
+            font-size: 0.95em;
+            backdrop-filter: blur(10px);
+        }
+
+        footer {
+            text-align: center;
+            padding: 40px 20px 20px;
+            color: rgba(255,255,255,0.8);
+            font-size: 0.9em;
+        }
+
+        /* Mobile optimizations */
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 2em;
+            }
+
+            .subtitle {
+                font-size: 1em;
+            }
+
+            .source-section {
+                padding: 20px;
+                margin: 20px 0;
+            }
+
+            .source-header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .source-file {
+                font-size: 1.2em;
+            }
+
+            .diagrams-grid {
+                grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+                gap: 15px;
+            }
+
+            .container {
+                padding: 10px;
+            }
+        }
+
+        /* Small mobile devices */
+        @media (max-width: 480px) {
+            .diagrams-grid {
+                grid-template-columns: 1fr;
+            }
+
+            header {
+                padding: 30px 15px;
+            }
+        }
+
+        /* Dark mode support */
+        @media (prefers-color-scheme: dark) {
+            .diagram-image-wrapper {
+                background: #2a2a2a;
+            }
         }
     </style>
 </head>
 <body>
-    <h1>Mermaid Diagram Index</h1>
+    <div class="container">
+        <header>
+            <h1>Mermaid Diagram Gallery</h1>
+            <div class="subtitle">Interactive diagrams with zoom and navigation</div>
+"""
+
+    # Count total diagrams
+    total_diagrams = sum(len(mapping.diagram_files) for mapping in mappings)
+    total_sources = len(mappings)
+
+    if total_diagrams > 0:
+        html_content += f"""            <div class="stats">
+                📊 {total_diagrams} diagram{'' if total_diagrams == 1 else 's'} from {total_sources} source{'' if total_sources == 1 else 's'}
+            </div>
+"""
+
+    html_content += """        </header>
 """
 
     if not mappings:
-        html_content += '    <p class="no-diagrams">No diagrams generated yet.</p>\n'
+        html_content += '        <div class="no-diagrams">No diagrams generated yet. Run the generator to create some!</div>\n'
     else:
         for mapping in mappings:
             source_path = Path(mapping.source_file)
             timestamp = mapping.timestamp
 
             html_content += f"""
-    <div class="source-section">
-        <div class="source-header">
-            <div class="source-file">{source_path.name}</div>
-            <div class="timestamp">{timestamp}</div>
-        </div>
-        <div><strong>Source:</strong> <code>{mapping.source_file}</code></div>
+        <div class="source-section">
+            <div class="source-header">
+                <div class="source-file">{source_path.name}</div>
+                <div class="timestamp">{timestamp}</div>
+            </div>
+            <div class="source-path">{mapping.source_file}</div>
 """
 
             if mapping.diagram_files:
-                html_content += '        <div class="diagrams-grid">\n'
-                for diagram_file in mapping.diagram_files:
+                html_content += '            <div class="diagrams-grid">\n'
+                for idx, diagram_file in enumerate(mapping.diagram_files):
                     diagram_path = Path(diagram_file)
-                    # Use relative path for HTML links
                     relative_path = diagram_path.name
 
-                    html_content += f"""
-            <div class="diagram-card">
-                <img src="{relative_path}" alt="{relative_path}">
-                <div class="diagram-filename">{relative_path}</div>
-            </div>
+                    # Create a description for the lightbox
+                    description = f"{source_path.name} - Diagram {idx + 1}"
+
+                    html_content += f"""                <a href="{relative_path}" class="glightbox diagram-card"
+                   data-gallery="gallery-{source_path.stem}"
+                   data-title="{relative_path}"
+                   data-description="{description}">
+                    <div class="diagram-image-wrapper">
+                        <img src="{relative_path}" alt="{relative_path}" loading="lazy">
+                    </div>
+                    <div class="diagram-filename">{relative_path}</div>
+                </a>
 """
-                html_content += "        </div>\n"
+                html_content += "            </div>\n"
             else:
                 html_content += (
-                    '        <p class="no-diagrams">No diagrams found.</p>\n'
+                    '            <div class="no-diagrams">No diagrams found in this file.</div>\n'
                 )
 
-            html_content += "    </div>\n"
+            html_content += "        </div>\n"
 
     html_content += """
+        <footer>
+            <p>Generated by MermaidVisualizer • Click any diagram to zoom • Use arrow keys to navigate</p>
+            <p style="font-size: 0.85em; margin-top: 10px;">💡 Tip: Pinch to zoom on mobile devices</p>
+        </footer>
+    </div>
+
+    <!-- GLightbox JS -->
+    <script src="https://cdn.jsdelivr.net/npm/glightbox@3.2.0/dist/js/glightbox.min.js"></script>
+
+    <script>
+        // Initialize GLightbox with custom settings
+        const lightbox = GLightbox({
+            touchNavigation: true,
+            loop: true,
+            autoplayVideos: false,
+            zoomable: true,
+            draggable: true,
+            closeButton: true,
+            slideEffect: 'slide',
+            moreLength: 0,
+            skin: 'modern',
+            svg: {
+                // Enable SVG zoom
+                inline: true,
+            }
+        });
+
+        // Add keyboard shortcuts info
+        console.log('Keyboard shortcuts:');
+        console.log('  - Arrow keys: Navigate between diagrams');
+        console.log('  - ESC: Close lightbox');
+        console.log('  - Mouse wheel: Zoom in/out');
+
+        // Log initialization
+        console.log('Gallery initialized with ' + document.querySelectorAll('.glightbox').length + ' diagrams');
+    </script>
 </body>
 </html>
 """
