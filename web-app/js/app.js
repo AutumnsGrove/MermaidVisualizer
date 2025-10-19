@@ -24,6 +24,12 @@ class MermaidVisualizerApp {
                 darkMode: 'mermaid_darkMode',
                 autoRender: 'mermaid_autoRender',
                 recentDocs: 'mermaid_recentDocs'
+            },
+            viewer: {
+                minZoom: 0.25,
+                maxZoom: 4.0,
+                zoomStep: 0.25,
+                doubleTapZoom: 2.0
             }
         };
 
@@ -38,6 +44,9 @@ class MermaidVisualizerApp {
 
         // Auto-save debounce timer
         this.autosaveTimer = null;
+
+        // Diagram viewer instance
+        this.diagramViewer = null;
 
         // Initialize app
         this.init();
@@ -67,6 +76,9 @@ class MermaidVisualizerApp {
 
             // Register service worker
             this.registerServiceWorker();
+
+            // Initialize diagram viewer
+            this.diagramViewer = new DiagramViewer(this);
 
             console.log('MermaidVisualizer initialized successfully');
             this.showToast('App ready!', 'success');
@@ -387,22 +399,24 @@ class MermaidVisualizerApp {
                 </div>
             `;
 
-            // Click to view full diagram
-            card.addEventListener('click', () => this.viewDiagram(diagram.id));
+            // Click to open diagram in modal viewer
+            card.addEventListener('click', () => {
+                if (this.diagramViewer) {
+                    this.diagramViewer.open(index);
+                }
+            });
 
             this.elements.diagramGallery.appendChild(card);
         });
     }
 
     /**
-     * View a specific diagram (scroll to it)
+     * View a specific diagram by ID (legacy method, now opens in modal)
      */
     viewDiagram(diagramId) {
-        const element = document.getElementById(diagramId);
-        if (element) {
-            element.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            element.classList.add('highlight');
-            setTimeout(() => element.classList.remove('highlight'), 2000);
+        const index = this.state.diagrams.findIndex(d => d.id === diagramId);
+        if (index !== -1 && this.diagramViewer) {
+            this.diagramViewer.open(index);
         }
     }
 
@@ -854,6 +868,508 @@ class MermaidVisualizerApp {
                 .catch(error => {
                     console.error('Service Worker registration failed:', error);
                 });
+        }
+    }
+}
+
+// ============================================================================
+// DIAGRAM VIEWER CLASS (Modal with Zoom, Pan, Navigation)
+// ============================================================================
+
+class DiagramViewer {
+    constructor(app) {
+        this.app = app;
+        this.currentIndex = 0;
+        this.zoom = 1.0;
+        this.panX = 0;
+        this.panY = 0;
+        this.isDragging = false;
+        this.dragStartX = 0;
+        this.dragStartY = 0;
+        this.lastTap = 0;
+        this.touchDistance = 0;
+
+        // Create modal DOM structure
+        this.createModal();
+        this.registerEventListeners();
+    }
+
+    /**
+     * Create modal HTML structure
+     */
+    createModal() {
+        const modal = document.createElement('div');
+        modal.id = 'diagramViewerModal';
+        modal.className = 'diagram-viewer-modal';
+        modal.innerHTML = `
+            <div class="diagram-viewer-backdrop"></div>
+
+            <!-- Close Button -->
+            <button class="viewer-close-btn" aria-label="Close">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+            </button>
+
+            <!-- Navigation Arrows -->
+            <button class="viewer-nav-btn viewer-prev-btn" aria-label="Previous">
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="15 18 9 12 15 6"></polyline>
+                </svg>
+            </button>
+            <button class="viewer-nav-btn viewer-next-btn" aria-label="Next">
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="9 18 15 12 9 6"></polyline>
+                </svg>
+            </button>
+
+            <!-- Diagram Container -->
+            <div class="viewer-diagram-container">
+                <div class="viewer-diagram-content"></div>
+            </div>
+
+            <!-- Controls Bar -->
+            <div class="viewer-controls">
+                <!-- Diagram Info -->
+                <div class="viewer-info">
+                    <span class="viewer-type-badge"></span>
+                    <span class="viewer-position"></span>
+                </div>
+
+                <!-- Zoom Controls -->
+                <div class="viewer-zoom-controls">
+                    <button class="viewer-zoom-btn" data-action="zoom-out" aria-label="Zoom Out">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="11" cy="11" r="8"></circle>
+                            <line x1="8" y1="11" x2="14" y2="11"></line>
+                            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                        </svg>
+                    </button>
+                    <span class="viewer-zoom-level">100%</span>
+                    <button class="viewer-zoom-btn" data-action="zoom-in" aria-label="Zoom In">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="11" cy="11" r="8"></circle>
+                            <line x1="11" y1="8" x2="11" y2="14"></line>
+                            <line x1="8" y1="11" x2="14" y2="11"></line>
+                            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                        </svg>
+                    </button>
+                    <button class="viewer-zoom-btn" data-action="zoom-reset" aria-label="Reset Zoom">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M1 4v6h6"></path>
+                            <path d="M23 20v-6h-6"></path>
+                            <path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 0 1 3.51 15"></path>
+                        </svg>
+                    </button>
+                    <button class="viewer-zoom-btn" data-action="zoom-fit" aria-label="Fit to Screen">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"></path>
+                        </svg>
+                    </button>
+                </div>
+
+                <!-- Keyboard Shortcuts Hint -->
+                <div class="viewer-shortcuts-hint">
+                    <span>💡 ESC to close • Arrows to navigate • +/- to zoom</span>
+                </div>
+            </div>
+        `;
+
+        document.body.appendChild(modal);
+        this.modal = modal;
+
+        // Cache modal elements
+        this.elements = {
+            modal: modal,
+            backdrop: modal.querySelector('.diagram-viewer-backdrop'),
+            closeBtn: modal.querySelector('.viewer-close-btn'),
+            prevBtn: modal.querySelector('.viewer-prev-btn'),
+            nextBtn: modal.querySelector('.viewer-next-btn'),
+            container: modal.querySelector('.viewer-diagram-container'),
+            content: modal.querySelector('.viewer-diagram-content'),
+            typeBadge: modal.querySelector('.viewer-type-badge'),
+            position: modal.querySelector('.viewer-position'),
+            zoomLevel: modal.querySelector('.viewer-zoom-level'),
+            zoomControls: modal.querySelectorAll('.viewer-zoom-btn')
+        };
+    }
+
+    /**
+     * Register event listeners for modal interactions
+     */
+    registerEventListeners() {
+        // Close button
+        this.elements.closeBtn.addEventListener('click', () => this.close());
+
+        // Backdrop click
+        this.elements.backdrop.addEventListener('click', () => this.close());
+
+        // Navigation buttons
+        this.elements.prevBtn.addEventListener('click', () => this.previous());
+        this.elements.nextBtn.addEventListener('click', () => this.next());
+
+        // Zoom controls
+        this.elements.zoomControls.forEach(btn => {
+            btn.addEventListener('click', (e) => this.handleZoomControl(e));
+        });
+
+        // Mouse drag events
+        this.elements.content.addEventListener('mousedown', (e) => this.handleDragStart(e));
+        window.addEventListener('mousemove', (e) => this.handleDragMove(e));
+        window.addEventListener('mouseup', () => this.handleDragEnd());
+
+        // Touch events
+        this.elements.content.addEventListener('touchstart', (e) => this.handleTouchStart(e), { passive: false });
+        this.elements.content.addEventListener('touchmove', (e) => this.handleTouchMove(e), { passive: false });
+        this.elements.content.addEventListener('touchend', (e) => this.handleTouchEnd(e));
+
+        // Keyboard shortcuts
+        document.addEventListener('keydown', (e) => this.handleKeyboard(e));
+
+        // Prevent context menu on long press
+        this.elements.content.addEventListener('contextmenu', (e) => e.preventDefault());
+    }
+
+    /**
+     * Open modal and display diagram at index
+     */
+    open(index = 0) {
+        if (!this.app.state.diagrams || this.app.state.diagrams.length === 0) {
+            return;
+        }
+
+        this.currentIndex = Math.max(0, Math.min(index, this.app.state.diagrams.length - 1));
+        this.resetView();
+        this.loadDiagram();
+        this.updateUI();
+        this.elements.modal.classList.add('active');
+        document.body.style.overflow = 'hidden'; // Prevent background scroll
+    }
+
+    /**
+     * Close modal
+     */
+    close() {
+        this.elements.modal.classList.remove('active');
+        document.body.style.overflow = ''; // Restore scroll
+    }
+
+    /**
+     * Load current diagram into viewer
+     */
+    loadDiagram() {
+        const diagram = this.app.state.diagrams[this.currentIndex];
+        if (!diagram) return;
+
+        this.elements.content.innerHTML = diagram.svg;
+        this.elements.typeBadge.textContent = diagram.type;
+        this.updatePosition();
+    }
+
+    /**
+     * Navigate to previous diagram
+     */
+    previous() {
+        this.currentIndex--;
+        if (this.currentIndex < 0) {
+            this.currentIndex = this.app.state.diagrams.length - 1; // Wrap around
+        }
+        this.resetView();
+        this.loadDiagram();
+        this.updateUI();
+    }
+
+    /**
+     * Navigate to next diagram
+     */
+    next() {
+        this.currentIndex++;
+        if (this.currentIndex >= this.app.state.diagrams.length) {
+            this.currentIndex = 0; // Wrap around
+        }
+        this.resetView();
+        this.loadDiagram();
+        this.updateUI();
+    }
+
+    /**
+     * Handle zoom control buttons
+     */
+    handleZoomControl(event) {
+        const action = event.currentTarget.dataset.action;
+
+        switch (action) {
+            case 'zoom-in':
+                this.zoomIn();
+                break;
+            case 'zoom-out':
+                this.zoomOut();
+                break;
+            case 'zoom-reset':
+                this.resetZoom();
+                break;
+            case 'zoom-fit':
+                this.fitToScreen();
+                break;
+        }
+    }
+
+    /**
+     * Zoom in
+     */
+    zoomIn() {
+        this.setZoom(this.zoom + this.app.config.viewer.zoomStep);
+    }
+
+    /**
+     * Zoom out
+     */
+    zoomOut() {
+        this.setZoom(this.zoom - this.app.config.viewer.zoomStep);
+    }
+
+    /**
+     * Reset zoom to 100%
+     */
+    resetZoom() {
+        this.setZoom(1.0);
+        this.panX = 0;
+        this.panY = 0;
+        this.updateTransform();
+    }
+
+    /**
+     * Fit diagram to screen
+     */
+    fitToScreen() {
+        const containerRect = this.elements.container.getBoundingClientRect();
+        const contentRect = this.elements.content.firstElementChild?.getBoundingClientRect();
+
+        if (!contentRect) return;
+
+        const scaleX = containerRect.width / contentRect.width;
+        const scaleY = containerRect.height / contentRect.height;
+        const scale = Math.min(scaleX, scaleY, 1.0) * 0.9; // 90% to add padding
+
+        this.setZoom(scale);
+        this.panX = 0;
+        this.panY = 0;
+        this.updateTransform();
+    }
+
+    /**
+     * Set zoom level with constraints
+     */
+    setZoom(newZoom) {
+        this.zoom = Math.max(
+            this.app.config.viewer.minZoom,
+            Math.min(newZoom, this.app.config.viewer.maxZoom)
+        );
+        this.updateTransform();
+        this.updateZoomDisplay();
+    }
+
+    /**
+     * Update zoom level display
+     */
+    updateZoomDisplay() {
+        this.elements.zoomLevel.textContent = `${Math.round(this.zoom * 100)}%`;
+    }
+
+    /**
+     * Update diagram position display
+     */
+    updatePosition() {
+        this.elements.position.textContent = `${this.currentIndex + 1} / ${this.app.state.diagrams.length}`;
+    }
+
+    /**
+     * Update UI elements
+     */
+    updateUI() {
+        this.updateZoomDisplay();
+        this.updatePosition();
+
+        // Update navigation button visibility
+        const hasMult = this.app.state.diagrams.length > 1;
+        this.elements.prevBtn.style.display = hasMult ? 'flex' : 'none';
+        this.elements.nextBtn.style.display = hasMult ? 'flex' : 'none';
+
+        // Update cursor based on zoom
+        this.elements.content.style.cursor = this.zoom > 1.0 ? 'grab' : 'default';
+    }
+
+    /**
+     * Reset view (zoom and pan)
+     */
+    resetView() {
+        this.zoom = 1.0;
+        this.panX = 0;
+        this.panY = 0;
+        this.updateTransform();
+    }
+
+    /**
+     * Update transform (apply zoom and pan)
+     */
+    updateTransform() {
+        this.elements.content.style.transform = `translate(${this.panX}px, ${this.panY}px) scale(${this.zoom})`;
+        this.elements.content.style.cursor = this.isDragging ? 'grabbing' : (this.zoom > 1.0 ? 'grab' : 'default');
+    }
+
+    /**
+     * Handle drag start (mouse)
+     */
+    handleDragStart(event) {
+        if (this.zoom <= 1.0) return; // Only drag when zoomed in
+
+        this.isDragging = true;
+        this.dragStartX = event.clientX - this.panX;
+        this.dragStartY = event.clientY - this.panY;
+        this.updateTransform();
+        event.preventDefault();
+    }
+
+    /**
+     * Handle drag move (mouse)
+     */
+    handleDragMove(event) {
+        if (!this.isDragging) return;
+
+        this.panX = event.clientX - this.dragStartX;
+        this.panY = event.clientY - this.dragStartY;
+        this.updateTransform();
+    }
+
+    /**
+     * Handle drag end (mouse)
+     */
+    handleDragEnd() {
+        this.isDragging = false;
+        this.updateTransform();
+    }
+
+    /**
+     * Handle touch start
+     */
+    handleTouchStart(event) {
+        const now = Date.now();
+        const timeDiff = now - this.lastTap;
+
+        // Double-tap detection
+        if (timeDiff < 300 && timeDiff > 0) {
+            this.handleDoubleTap(event);
+            this.lastTap = 0;
+            return;
+        }
+        this.lastTap = now;
+
+        if (event.touches.length === 2) {
+            // Pinch zoom start
+            this.touchDistance = this.getTouchDistance(event.touches);
+            event.preventDefault();
+        } else if (event.touches.length === 1 && this.zoom > 1.0) {
+            // Single finger drag (when zoomed)
+            const touch = event.touches[0];
+            this.isDragging = true;
+            this.dragStartX = touch.clientX - this.panX;
+            this.dragStartY = touch.clientY - this.panY;
+            event.preventDefault();
+        }
+    }
+
+    /**
+     * Handle touch move
+     */
+    handleTouchMove(event) {
+        if (event.touches.length === 2) {
+            // Pinch zoom
+            const newDistance = this.getTouchDistance(event.touches);
+            const scale = newDistance / this.touchDistance;
+            this.setZoom(this.zoom * scale);
+            this.touchDistance = newDistance;
+            event.preventDefault();
+        } else if (event.touches.length === 1 && this.isDragging) {
+            // Single finger drag
+            const touch = event.touches[0];
+            this.panX = touch.clientX - this.dragStartX;
+            this.panY = touch.clientY - this.dragStartY;
+            this.updateTransform();
+            event.preventDefault();
+        }
+    }
+
+    /**
+     * Handle touch end
+     */
+    handleTouchEnd(event) {
+        if (event.touches.length === 0) {
+            this.isDragging = false;
+            this.updateTransform();
+        }
+    }
+
+    /**
+     * Handle double-tap to zoom
+     */
+    handleDoubleTap(event) {
+        if (this.zoom > 1.0) {
+            this.resetZoom();
+        } else {
+            this.setZoom(this.app.config.viewer.doubleTapZoom);
+        }
+        event.preventDefault();
+    }
+
+    /**
+     * Get distance between two touch points
+     */
+    getTouchDistance(touches) {
+        const dx = touches[0].clientX - touches[1].clientX;
+        const dy = touches[0].clientY - touches[1].clientY;
+        return Math.sqrt(dx * dx + dy * dy);
+    }
+
+    /**
+     * Handle keyboard shortcuts
+     */
+    handleKeyboard(event) {
+        // Only handle if modal is open
+        if (!this.elements.modal.classList.contains('active')) return;
+
+        switch (event.key) {
+            case 'Escape':
+                this.close();
+                event.preventDefault();
+                break;
+            case 'ArrowLeft':
+                this.previous();
+                event.preventDefault();
+                break;
+            case 'ArrowRight':
+                this.next();
+                event.preventDefault();
+                break;
+            case '+':
+            case '=':
+                this.zoomIn();
+                event.preventDefault();
+                break;
+            case '-':
+            case '_':
+                this.zoomOut();
+                event.preventDefault();
+                break;
+            case '0':
+                this.resetZoom();
+                event.preventDefault();
+                break;
+            case 'f':
+            case 'F':
+                this.fitToScreen();
+                event.preventDefault();
+                break;
         }
     }
 }

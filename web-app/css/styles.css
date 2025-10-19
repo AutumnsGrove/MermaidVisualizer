@@ -1,492 +1,369 @@
-/*
- * MermaidVisualizer - Custom Styles
+/**
+ * Minimal Custom Styles for MermaidVisualizer
  *
- * This file contains ONLY custom styles that Tailwind CSS doesn't provide.
- * Tailwind (via CDN) handles 90% of styling - this file handles the remaining 10%.
- *
- * Contents:
- * 1. Custom CSS Variables (theme-specific values not in Tailwind)
- * 2. Smooth Scroll Behavior
- * 3. Custom Animations (toast, modal, spinner)
- * 4. iOS Safe Area Utilities
- * 5. Mermaid Diagram Container Styles
- * 6. Print Styles
- * 7. Accessibility (reduced motion)
+ * Tailwind CSS handles 95% of styling via utility classes in HTML.
+ * This file only contains essential custom animations and fixes.
  */
 
 /* ============================================================================
-   1. CUSTOM CSS VARIABLES
+   ANIMATIONS - Not provided by Tailwind
    ============================================================================ */
 
-:root {
-  /* Safe Area Insets - iOS notched devices */
-  --safe-area-inset-top: env(safe-area-inset-top);
-  --safe-area-inset-right: env(safe-area-inset-right);
-  --safe-area-inset-bottom: env(safe-area-inset-bottom);
-  --safe-area-inset-left: env(safe-area-inset-left);
-
-  /* Layout Dimensions */
-  --header-height: 60px;
-  --action-bar-height: 80px;
-  --touch-target-min: 44px; /* iOS HIG minimum */
-
-  /* Custom Gradient (not in default Tailwind) */
-  --gradient-primary: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-
-  /* Z-index Scale (for consistency) */
-  --z-sticky: 200;
-  --z-fixed: 300;
-  --z-modal-backdrop: 400;
-  --z-modal: 500;
-  --z-toast: 600;
-}
-
-/* ============================================================================
-   2. SMOOTH SCROLL BEHAVIOR
-   ============================================================================ */
-
-html {
-  scroll-behavior: smooth;
-  /* Prevent iOS font size adjustment */
-  -webkit-text-size-adjust: 100%;
-  text-size-adjust: 100%;
-}
-
-/* iOS Safari fix for viewport height */
-body {
-  min-height: -webkit-fill-available;
-}
-
-/* ============================================================================
-   3. CUSTOM ANIMATIONS
-   ============================================================================ */
-
-/* Toast Slide-In Animation */
-@keyframes toastSlideIn {
+@keyframes slideInFromBottom {
   from {
-    transform: translateX(100%);
+    transform: translateY(100%);
     opacity: 0;
   }
   to {
-    transform: translateX(0);
+    transform: translateY(0);
     opacity: 1;
   }
 }
 
-@keyframes toastSlideOut {
-  from {
-    transform: translateX(0);
-    opacity: 1;
-  }
-  to {
-    transform: translateX(100%);
-    opacity: 0;
-  }
-}
-
-.toast-slide-in {
-  animation: toastSlideIn 250ms ease-in-out;
-}
-
-.toast-slide-out {
-  animation: toastSlideOut 250ms ease-in-out;
-}
-
-/* Modal Animations */
-@keyframes modalFadeIn {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
-}
-
-@keyframes modalSlideIn {
-  from {
-    transform: scale(0.9);
-    opacity: 0;
-  }
-  to {
-    transform: scale(1);
-    opacity: 1;
-  }
-}
-
-@keyframes modalSlideOut {
-  from {
-    transform: scale(1);
-    opacity: 1;
-  }
-  to {
-    transform: scale(0.9);
-    opacity: 0;
-  }
-}
-
-.modal-backdrop-enter {
-  animation: modalFadeIn 250ms ease-in-out;
-}
-
-.modal-enter {
-  animation: modalSlideIn 250ms ease-in-out;
-}
-
-.modal-exit {
-  animation: modalSlideOut 250ms ease-in-out;
-}
-
-/* Loading Spinner Animation */
-@keyframes spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-.spinner {
-  animation: spin 0.8s linear infinite;
-}
-
-/* Fade In Animation (general purpose) */
 @keyframes fadeIn {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
-.fade-in {
-  animation: fadeIn 250ms ease-in-out;
-}
-
-/* Pulse Animation for Loading States */
-@keyframes pulse {
-  0%, 100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.5;
-  }
-}
-
-.pulse {
-  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+@keyframes shimmer {
+  0% { background-position: -1000px 0; }
+  100% { background-position: 1000px 0; }
 }
 
 /* ============================================================================
-   4. iOS SAFE AREA UTILITIES
+   TOAST NOTIFICATIONS - Slide in animations
    ============================================================================ */
 
-/* Safe area padding utilities */
-.safe-top {
-  padding-top: var(--safe-area-inset-top);
+.toast-enter {
+  animation: slideInFromBottom 0.3s ease-out;
 }
 
-.safe-right {
-  padding-right: var(--safe-area-inset-right);
+.toast-exit {
+  animation: fadeIn 0.3s ease-out reverse;
 }
 
-.safe-bottom {
-  padding-bottom: var(--safe-area-inset-bottom);
+/* ============================================================================
+   MERMAID DIAGRAM SPECIFIC - Rendering optimizations
+   ============================================================================ */
+
+.mermaid-container {
+  min-height: 200px;
 }
 
-.safe-left {
-  padding-left: var(--safe-area-inset-left);
+.mermaid-container svg {
+  max-width: 100%;
+  height: auto;
 }
 
-/* Combined safe area padding */
-.safe-area-inset {
-  padding-top: var(--safe-area-inset-top);
-  padding-right: var(--safe-area-inset-right);
-  padding-bottom: var(--safe-area-inset-bottom);
-  padding-left: var(--safe-area-inset-left);
+/* Loading skeleton for diagrams */
+.diagram-loading {
+  background: linear-gradient(
+    90deg,
+    rgba(148, 163, 184, 0.1) 0%,
+    rgba(148, 163, 184, 0.2) 50%,
+    rgba(148, 163, 184, 0.1) 100%
+  );
+  background-size: 1000px 100%;
+  animation: shimmer 2s infinite linear;
 }
 
-/* iOS-specific fixes for input zoom prevention */
+/* ============================================================================
+   iOS SPECIFIC FIXES
+   ============================================================================ */
+
+/* Prevent iOS zoom on input focus */
 @supports (-webkit-touch-callout: none) {
   input[type="text"],
   input[type="email"],
   input[type="number"],
   input[type="url"],
   textarea {
-    font-size: 16px; /* Prevents iOS Safari auto-zoom on focus */
+    font-size: 16px !important;
   }
 }
 
+/* Smooth scrolling on iOS */
+.scroll-smooth {
+  -webkit-overflow-scrolling: touch;
+}
+
 /* ============================================================================
-   5. MERMAID DIAGRAM CONTAINER STYLES
+   DIAGRAM VIEWER MODAL - Full-screen viewer with zoom and navigation
    ============================================================================ */
 
-/*
- * Mermaid diagram rendering optimizations
- * These styles ensure diagrams render correctly and can be zoomed/panned
- */
-
-.mermaid-container {
-  /* Ensure diagrams don't overflow */
-  overflow: hidden;
-  position: relative;
-  width: 100%;
-  min-height: 200px;
+.diagram-viewer-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  pointer-events: none;
 }
 
-.mermaid-container svg {
-  /* Center diagrams by default */
-  display: block;
-  margin: 0 auto;
-  max-width: 100%;
-  height: auto;
+.diagram-viewer-modal.active {
+  display: flex;
+  opacity: 1;
+  pointer-events: all;
 }
 
-/* Diagram zoom/pan interactions */
-.mermaid-zoom-container {
-  cursor: grab;
-  overflow: auto;
-  -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
+/* Backdrop */
+.diagram-viewer-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.85);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
 }
 
-.mermaid-zoom-container:active {
-  cursor: grabbing;
-}
-
-/* Diagram loading state */
-.mermaid-loading {
+/* Close Button */
+.viewer-close-btn {
+  position: absolute;
+  top: 1.5rem;
+  right: 1.5rem;
+  z-index: 10002;
   display: flex;
   align-items: center;
   justify-content: center;
-  min-height: 200px;
-  background: linear-gradient(
-    90deg,
-    rgba(0, 0, 0, 0.02) 25%,
-    rgba(0, 0, 0, 0.05) 50%,
-    rgba(0, 0, 0, 0.02) 75%
-  );
-  background-size: 200% 100%;
-  animation: shimmer 1.5s infinite;
+  width: 3rem;
+  height: 3rem;
+  padding: 0;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 50%;
+  color: white;
+  cursor: pointer;
+  transition: all 0.2s ease;
 }
 
-@keyframes shimmer {
-  0% {
-    background-position: 200% 0;
+.viewer-close-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+  transform: scale(1.1);
+}
+
+.viewer-close-btn:active {
+  transform: scale(0.95);
+}
+
+/* Navigation Arrows */
+.viewer-nav-btn {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 10002;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 3.5rem;
+  height: 3.5rem;
+  padding: 0;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 50%;
+  color: white;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.viewer-prev-btn {
+  left: 2rem;
+}
+
+.viewer-next-btn {
+  right: 2rem;
+}
+
+.viewer-nav-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+  transform: translateY(-50%) scale(1.1);
+}
+
+.viewer-nav-btn:active {
+  transform: translateY(-50%) scale(0.95);
+}
+
+/* Diagram Container */
+.viewer-diagram-container {
+  position: relative;
+  z-index: 10001;
+  width: calc(100% - 8rem);
+  height: calc(100% - 10rem);
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.viewer-diagram-content {
+  position: relative;
+  max-width: 100%;
+  max-height: 100%;
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transform-origin: center center;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.viewer-diagram-content svg {
+  max-width: 100%;
+  max-height: 100%;
+  display: block;
+}
+
+/* Controls Bar */
+.viewer-controls {
+  position: absolute;
+  bottom: 2rem;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 10002;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  padding: 1.25rem 2rem;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 1.5rem;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+}
+
+/* Diagram Info */
+.viewer-info {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  color: white;
+  font-size: 0.875rem;
+}
+
+.viewer-type-badge {
+  padding: 0.25rem 0.75rem;
+  background: rgba(99, 102, 241, 0.8);
+  border-radius: 0.5rem;
+  font-weight: 600;
+  text-transform: capitalize;
+}
+
+.viewer-position {
+  font-weight: 500;
+  opacity: 0.9;
+}
+
+/* Zoom Controls */
+.viewer-zoom-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.viewer-zoom-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  padding: 0;
+  background: rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 0.75rem;
+  color: white;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.viewer-zoom-btn:hover {
+  background: rgba(255, 255, 255, 0.25);
+  transform: scale(1.05);
+}
+
+.viewer-zoom-btn:active {
+  transform: scale(0.95);
+}
+
+.viewer-zoom-level {
+  min-width: 4rem;
+  text-align: center;
+  color: white;
+  font-weight: 600;
+  font-size: 0.875rem;
+}
+
+/* Shortcuts Hint */
+.viewer-shortcuts-hint {
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 0.75rem;
+  text-align: center;
+}
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+  .viewer-nav-btn {
+    width: 3rem;
+    height: 3rem;
   }
-  100% {
-    background-position: -200% 0;
+
+  .viewer-prev-btn {
+    left: 1rem;
+  }
+
+  .viewer-next-btn {
+    right: 1rem;
+  }
+
+  .viewer-diagram-container {
+    width: calc(100% - 4rem);
+    height: calc(100% - 8rem);
+  }
+
+  .viewer-controls {
+    bottom: 1rem;
+    padding: 1rem 1.5rem;
+    border-radius: 1.25rem;
+  }
+
+  .viewer-zoom-btn {
+    width: 2.25rem;
+    height: 2.25rem;
+  }
+
+  .viewer-shortcuts-hint {
+    display: none; /* Hide on mobile to save space */
   }
 }
 
-@media (prefers-color-scheme: dark) {
-  .mermaid-loading {
-    background: linear-gradient(
-      90deg,
-      rgba(255, 255, 255, 0.02) 25%,
-      rgba(255, 255, 255, 0.05) 50%,
-      rgba(255, 255, 255, 0.02) 75%
-    );
-    background-size: 200% 100%;
-  }
+/* Prevent text selection during drag */
+.viewer-diagram-content.dragging {
+  cursor: grabbing !important;
 }
 
 /* ============================================================================
-   6. CUSTOM BACKDROP FILTER UTILITIES
-   ============================================================================ */
-
-/* Enhanced backdrop blur (more than Tailwind's default) */
-.backdrop-blur-heavy {
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-}
-
-.backdrop-blur-glass {
-  backdrop-filter: blur(8px) saturate(180%);
-  -webkit-backdrop-filter: blur(8px) saturate(180%);
-}
-
-/* ============================================================================
-   7. PRINT STYLES
+   PRINT STYLES
    ============================================================================ */
 
 @media print {
-  /* Hide interactive elements */
   .no-print,
   button,
-  [role="button"],
-  nav,
-  .toast-container {
+  header,
+  nav {
     display: none !important;
   }
 
-  /* Reset layout for printing */
-  body {
-    background: white !important;
-    color: black !important;
-  }
-
-  /* Ensure page breaks are handled gracefully */
-  .card,
   .diagram-card {
     break-inside: avoid;
     page-break-inside: avoid;
   }
 
-  /* Show URLs in links */
-  a[href^="http"]:after {
-    content: " (" attr(href) ")";
-    font-size: 0.8em;
-    color: #666;
-  }
-
-  /* Expand hidden content for print */
-  details {
-    display: block;
-  }
-
-  details summary {
-    display: none;
-  }
-
-  /* Ensure diagrams are visible */
-  .mermaid-container {
-    overflow: visible;
+  .diagram-viewer-modal {
+    display: none !important;
   }
 }
-
-/* ============================================================================
-   8. ACCESSIBILITY - REDUCED MOTION
-   ============================================================================ */
-
-/*
- * Respect user's motion preferences
- * Disable or minimize animations for users who prefer reduced motion
- */
-@media (prefers-reduced-motion: reduce) {
-  *,
-  *::before,
-  *::after {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
-    scroll-behavior: auto !important;
-  }
-
-  /* Keep essential animations but make them instant */
-  .spinner {
-    animation-duration: 0.1s !important;
-  }
-}
-
-/* ============================================================================
-   9. CUSTOM GRADIENT UTILITIES
-   ============================================================================ */
-
-/* Primary gradient (used in buttons, headers) */
-.bg-gradient-primary {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-}
-
-/* Animated gradient background */
-@keyframes gradientShift {
-  0% {
-    background-position: 0% 50%;
-  }
-  50% {
-    background-position: 100% 50%;
-  }
-  100% {
-    background-position: 0% 50%;
-  }
-}
-
-.bg-gradient-animated {
-  background: linear-gradient(
-    -45deg,
-    #667eea,
-    #764ba2,
-    #f093fb,
-    #667eea
-  );
-  background-size: 400% 400%;
-  animation: gradientShift 15s ease infinite;
-}
-
-/* ============================================================================
-   10. TOUCH INTERACTIONS
-   ============================================================================ */
-
-/* Remove tap highlight on touch devices */
-* {
-  -webkit-tap-highlight-color: transparent;
-}
-
-/* Ensure minimum touch target size for accessibility */
-.touch-target {
-  min-width: var(--touch-target-min);
-  min-height: var(--touch-target-min);
-}
-
-/* Active state for touch devices */
-.touch-active:active {
-  transform: scale(0.98);
-  opacity: 0.9;
-}
-
-/* ============================================================================
-   11. SERVICE WORKER UPDATE TOAST
-   ============================================================================ */
-
-/* Special styling for service worker update notifications */
-.sw-update-toast {
-  border: 2px solid #667eea;
-  background: rgba(102, 126, 234, 0.1);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-}
-
-@media (prefers-color-scheme: dark) {
-  .sw-update-toast {
-    background: rgba(102, 126, 234, 0.2);
-  }
-}
-
-/* ============================================================================
-   12. UTILITY CLASSES
-   ============================================================================ */
-
-/* Smooth transitions (Tailwind has this, but with custom timing) */
-.transition-custom {
-  transition: all 250ms cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-/* Glass morphism effect */
-.glass {
-  background: rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(10px) saturate(180%);
-  -webkit-backdrop-filter: blur(10px) saturate(180%);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-}
-
-@media (prefers-color-scheme: dark) {
-  .glass {
-    background: rgba(0, 0, 0, 0.2);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-  }
-}
-
-/* Text gradient effect */
-.text-gradient {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-}
-
-/* ============================================================================
-   END OF CUSTOM STYLES
-
-   Note: All other styling is handled by Tailwind CSS via CDN.
-   Only add styles here if they are truly custom and not provided by Tailwind.
-   ============================================================================ */

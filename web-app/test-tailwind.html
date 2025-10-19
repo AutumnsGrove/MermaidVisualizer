@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tailwind Test</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 min-h-screen flex items-center justify-center p-8">
+    <div class="max-w-md w-full space-y-6">
+        <!-- Card 1: Glassmorphism -->
+        <div class="bg-white/10 backdrop-blur-xl border border-white/20 rounded-2xl p-6 shadow-2xl">
+            <h2 class="text-2xl font-bold text-white mb-2">Tailwind CSS is Working! ✨</h2>
+            <p class="text-slate-300">If you see this card with a frosted glass effect and gradient background, Tailwind is loading correctly.</p>
+        </div>
+
+        <!-- Card 2: Gradient Button -->
+        <button class="w-full bg-gradient-to-r from-violet-600 to-blue-600 hover:from-violet-700 hover:to-blue-700 text-white font-semibold py-4 px-6 rounded-xl shadow-lg shadow-violet-500/50 hover:shadow-xl hover:scale-105 transition-all duration-300">
+            Click Me - Beautiful Gradient Button
+        </button>
+
+        <!-- Card 3: Modern Card -->
+        <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xl p-6 hover:shadow-2xl hover:scale-105 transition-all duration-300">
+            <div class="flex items-center space-x-3 mb-4">
+                <div class="w-12 h-12 rounded-full bg-gradient-to-br from-violet-600 to-blue-600 flex items-center justify-center text-white text-xl font-bold">
+                    ✓
+                </div>
+                <div>
+                    <h3 class="font-bold text-lg text-slate-900">Modern Design</h3>
+                    <p class="text-sm text-slate-500">With smooth animations</p>
+                </div>
+            </div>
+            <p class="text-slate-600">This is what the MermaidVisualizer should look like - clean, modern, with beautiful gradients and animations.</p>
+        </div>
+    </div>
+</body>
+</html>

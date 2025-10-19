@@ -5,16 +5,16 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
 
     <!-- Primary Meta Tags -->
-    <title>MermaidVisualizer - Diagram Renderer</title>
-    <meta name="title" content="MermaidVisualizer - Diagram Renderer">
-    <meta name="description" content="Mobile-first PWA for rendering Mermaid diagrams from markdown">
+    <title>MermaidVisualizer - Premium Diagram Renderer</title>
+    <meta name="title" content="MermaidVisualizer - Premium Diagram Renderer">
+    <meta name="description" content="Ultra-premium PWA for rendering stunning Mermaid diagrams from markdown">
 
     <!-- PWA Manifest -->
     <link rel="manifest" href="manifest.json">
 
     <!-- Theme Color -->
-    <meta name="theme-color" content="#7c3aed">
-    <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#0f172a">
+    <meta name="theme-color" content="#8b5cf6">
+    <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#0a0a0f">
 
     <!-- iOS Specific Meta Tags -->
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -34,7 +34,7 @@
     <!-- Google Fonts - Inter -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
 
     <!-- Tailwind CSS v3.4+ via Play CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -44,7 +44,7 @@
             theme: {
                 extend: {
                     fontFamily: {
-                        sans: ['Inter', 'system-ui', 'sans-serif'],
+                        sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
                     },
                     colors: {
                         primary: {
@@ -62,7 +62,53 @@
                         }
                     },
                     animation: {
-                        'spin-slow': 'spin 1.5s linear infinite',
+                        'spin-slow': 'spin 3s linear infinite',
+                        'gradient': 'gradient 8s ease infinite',
+                        'float': 'float 6s ease-in-out infinite',
+                        'shimmer': 'shimmer 2s linear infinite',
+                        'fade-in': 'fadeIn 0.5s ease-out',
+                        'fade-in-delay': 'fadeIn 0.7s ease-out',
+                        'slide-up': 'slideUp 0.5s ease-out',
+                        'scale-in': 'scaleIn 0.3s ease-out',
+                    },
+                    keyframes: {
+                        gradient: {
+                            '0%, 100%': {
+                                'background-size': '200% 200%',
+                                'background-position': 'left center'
+                            },
+                            '50%': {
+                                'background-size': '200% 200%',
+                                'background-position': 'right center'
+                            }
+                        },
+                        float: {
+                            '0%, 100%': { transform: 'translateY(0px)' },
+                            '50%': { transform: 'translateY(-20px)' }
+                        },
+                        shimmer: {
+                            '0%': { transform: 'translateX(-100%)' },
+                            '100%': { transform: 'translateX(100%)' }
+                        },
+                        fadeIn: {
+                            '0%': { opacity: '0', transform: 'translateY(10px)' },
+                            '100%': { opacity: '1', transform: 'translateY(0)' }
+                        },
+                        slideUp: {
+                            '0%': { opacity: '0', transform: 'translateY(20px)' },
+                            '100%': { opacity: '1', transform: 'translateY(0)' }
+                        },
+                        scaleIn: {
+                            '0%': { opacity: '0', transform: 'scale(0.95)' },
+                            '100%': { opacity: '1', transform: 'scale(1)' }
+                        }
+                    },
+                    backgroundImage: {
+                        'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))',
+                        'mesh-gradient': 'radial-gradient(at 27% 37%, hsla(215, 98%, 61%, 0.08) 0px, transparent 50%), radial-gradient(at 97% 21%, hsla(125, 98%, 72%, 0.05) 0px, transparent 50%), radial-gradient(at 52% 99%, hsla(354, 98%, 61%, 0.06) 0px, transparent 50%), radial-gradient(at 10% 29%, hsla(256, 96%, 67%, 0.1) 0px, transparent 50%), radial-gradient(at 97% 96%, hsla(38, 60%, 74%, 0.05) 0px, transparent 50%), radial-gradient(at 33% 50%, hsla(222, 67%, 73%, 0.08) 0px, transparent 50%), radial-gradient(at 79% 53%, hsla(343, 68%, 79%, 0.05) 0px, transparent 50%)',
+                    },
+                    backdropBlur: {
+                        '3xl': '64px',
                     }
                 }
             }
@@ -89,91 +135,254 @@
             .safe-right {
                 padding-right: env(safe-area-inset-right);
             }
+
+            /* Noise texture overlay */
+            .noise-bg::before {
+                content: '';
+                position: absolute;
+                inset: 0;
+                background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 400 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.03'/%3E%3C/svg%3E");
+                pointer-events: none;
+                z-index: 1;
+            }
+
+            /* Glass effect with border glow */
+            .glass-card {
+                background: rgba(255, 255, 255, 0.05);
+                backdrop-filter: blur(40px);
+                -webkit-backdrop-filter: blur(40px);
+                border: 1px solid rgba(255, 255, 255, 0.1);
+            }
+
+            .glass-card-light {
+                background: rgba(255, 255, 255, 0.8);
+                backdrop-filter: blur(40px);
+                -webkit-backdrop-filter: blur(40px);
+                border: 1px solid rgba(255, 255, 255, 0.5);
+            }
+
+            /* Gradient border animation */
+            .gradient-border {
+                position: relative;
+                background-clip: padding-box;
+            }
+
+            .gradient-border::before {
+                content: '';
+                position: absolute;
+                inset: 0;
+                border-radius: inherit;
+                padding: 1px;
+                background: linear-gradient(135deg, rgba(139, 92, 246, 0.4), rgba(236, 72, 153, 0.4), rgba(34, 211, 238, 0.4));
+                -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+                mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+                -webkit-mask-composite: xor;
+                mask-composite: exclude;
+                pointer-events: none;
+                opacity: 0;
+                transition: opacity 0.3s;
+            }
+
+            .gradient-border:focus::before,
+            .gradient-border:focus-within::before {
+                opacity: 1;
+            }
+
+            /* Shimmer effect */
+            .shimmer {
+                position: relative;
+                overflow: hidden;
+            }
+
+            .shimmer::before {
+                content: '';
+                position: absolute;
+                top: 0;
+                left: -100%;
+                width: 100%;
+                height: 100%;
+                background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+                animation: shimmer 2s infinite;
+            }
+
+            /* Glow effect */
+            .glow-on-hover {
+                transition: all 0.3s ease;
+            }
+
+            .glow-on-hover:hover {
+                box-shadow: 0 0 40px rgba(139, 92, 246, 0.4), 0 0 80px rgba(236, 72, 153, 0.2);
+            }
+        }
+
+        @layer base {
+            /* Smooth scrolling */
+            html {
+                scroll-behavior: smooth;
+            }
+
+            /* Custom scrollbar */
+            ::-webkit-scrollbar {
+                width: 8px;
+                height: 8px;
+            }
+
+            ::-webkit-scrollbar-track {
+                background: rgba(15, 23, 42, 0.1);
+            }
+
+            ::-webkit-scrollbar-thumb {
+                background: rgba(139, 92, 246, 0.3);
+                border-radius: 4px;
+            }
+
+            ::-webkit-scrollbar-thumb:hover {
+                background: rgba(139, 92, 246, 0.5);
+            }
         }
     </style>
 </head>
-<body class="h-full bg-gradient-to-br from-slate-50 via-white to-slate-100 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 font-sans antialiased transition-colors duration-300">
+<body class="h-full bg-slate-950 font-sans antialiased overflow-x-hidden">
+
+    <!-- Animated Mesh Gradient Background -->
+    <div class="fixed inset-0 -z-10 noise-bg">
+        <!-- Base gradient -->
+        <div class="absolute inset-0 bg-gradient-to-br from-slate-950 via-violet-950/20 to-slate-950"></div>
+
+        <!-- Animated gradient orbs -->
+        <div class="absolute top-0 -left-4 w-72 h-72 bg-violet-500/10 rounded-full mix-blend-multiply filter blur-3xl opacity-70 animate-float"></div>
+        <div class="absolute top-0 -right-4 w-72 h-72 bg-fuchsia-500/10 rounded-full mix-blend-multiply filter blur-3xl opacity-70 animate-float" style="animation-delay: 2s;"></div>
+        <div class="absolute -bottom-8 left-20 w-72 h-72 bg-cyan-500/10 rounded-full mix-blend-multiply filter blur-3xl opacity-70 animate-float" style="animation-delay: 4s;"></div>
+
+        <!-- Mesh gradient overlay -->
+        <div class="absolute inset-0 bg-mesh-gradient"></div>
+    </div>
 
     <!-- App Container -->
-    <div id="app" class="h-full flex flex-col">
+    <div id="app" class="relative h-full flex flex-col">
 
-        <!-- Header -->
-        <header class="sticky top-0 z-40 w-full border-b border-slate-200/60 dark:border-slate-800/60 bg-white/80 dark:bg-slate-900/80 backdrop-blur-lg backdrop-saturate-150 safe-top">
-            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <div class="flex items-center justify-between h-16">
-                    <!-- Logo & Title -->
-                    <div class="flex items-center space-x-3">
-                        <div class="flex-shrink-0 p-2 rounded-xl bg-gradient-to-br from-violet-600 to-blue-600 shadow-lg shadow-violet-500/20 dark:shadow-violet-500/10">
-                            <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                                <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
-                                <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
-                                <line x1="12" y1="22.08" x2="12" y2="12"></line>
-                            </svg>
+        <!-- Floating Glass Header -->
+        <header class="sticky top-0 z-40 w-full safe-top animate-fade-in">
+            <div class="mx-4 sm:mx-6 mt-4 sm:mt-6">
+                <div class="max-w-[1400px] mx-auto glass-card rounded-2xl shadow-2xl shadow-violet-500/10">
+                    <div class="px-4 sm:px-6 lg:px-8">
+                        <div class="flex items-center justify-between h-16 sm:h-18">
+                            <!-- Logo & Title -->
+                            <div class="flex items-center space-x-3 sm:space-x-4">
+                                <div class="relative flex-shrink-0 p-2.5 rounded-xl bg-gradient-to-br from-violet-600 via-fuchsia-600 to-cyan-600 shadow-lg shadow-violet-500/30 animate-gradient bg-[length:200%_200%]">
+                                    <svg class="w-6 h-6 sm:w-7 sm:h-7 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                        <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
+                                        <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
+                                        <line x1="12" y1="22.08" x2="12" y2="12"></line>
+                                    </svg>
+                                </div>
+                                <div>
+                                    <h1 class="text-xl sm:text-2xl font-bold bg-gradient-to-r from-violet-400 via-fuchsia-400 to-cyan-400 bg-clip-text text-transparent hidden sm:block">
+                                        MermaidVisualizer
+                                    </h1>
+                                    <h1 class="text-xl font-bold bg-gradient-to-r from-violet-400 via-fuchsia-400 to-cyan-400 bg-clip-text text-transparent sm:hidden">
+                                        Mermaid
+                                    </h1>
+                                    <p class="text-xs text-slate-400 hidden sm:block">Premium diagram renderer</p>
+                                </div>
+                            </div>
+
+                            <!-- Settings Button -->
+                            <button
+                                id="menuBtn"
+                                class="group relative p-3 rounded-xl glass-card hover:bg-white/10 transition-all duration-300 hover:scale-105 focus:outline-none focus:ring-4 focus:ring-violet-500/30"
+                                aria-label="Menu">
+                                <svg class="w-5 h-5 text-slate-300 group-hover:text-white transition-colors" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                    <circle cx="12" cy="12" r="3"></circle>
+                                    <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+                                </svg>
+                                <div class="absolute inset-0 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300 blur-md bg-gradient-to-r from-violet-500/20 to-fuchsia-500/20 -z-10"></div>
+                            </button>
                         </div>
-                        <h1 class="text-xl font-bold bg-gradient-to-r from-violet-600 to-blue-600 dark:from-violet-400 dark:to-blue-400 bg-clip-text text-transparent hidden sm:block">
-                            MermaidVisualizer
-                        </h1>
-                        <h1 class="text-xl font-bold bg-gradient-to-r from-violet-600 to-blue-600 dark:from-violet-400 dark:to-blue-400 bg-clip-text text-transparent sm:hidden">
-                            Mermaid
-                        </h1>
                     </div>
-
-                    <!-- Menu Button -->
-                    <button
-                        id="menuBtn"
-                        class="p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition-all duration-200 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-violet-500 focus:ring-offset-2 dark:focus:ring-offset-slate-900"
-                        aria-label="Menu">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                            <line x1="3" y1="12" x2="21" y2="12"></line>
-                            <line x1="3" y1="6" x2="21" y2="6"></line>
-                            <line x1="3" y1="18" x2="21" y2="18"></line>
-                        </svg>
-                    </button>
                 </div>
             </div>
         </header>
 
         <!-- Main Content Area -->
         <main class="flex-1 overflow-y-auto safe-left safe-right">
-            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-6 sm:space-y-8">
+            <div class="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 space-y-8 sm:space-y-12">
+
+                <!-- Hero Section -->
+                <section class="text-center space-y-6 py-8 sm:py-12 animate-slide-up">
+                    <div class="inline-flex items-center space-x-2 px-4 py-2 rounded-full glass-card text-sm text-slate-300 mb-4">
+                        <span class="relative flex h-2 w-2">
+                            <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-violet-400 opacity-75"></span>
+                            <span class="relative inline-flex rounded-full h-2 w-2 bg-violet-500"></span>
+                        </span>
+                        <span>Powered by Mermaid.js</span>
+                    </div>
+
+                    <h2 class="text-4xl sm:text-5xl lg:text-6xl font-black leading-tight">
+                        <span class="bg-gradient-to-r from-violet-400 via-fuchsia-400 to-cyan-400 bg-clip-text text-transparent">
+                            Transform Ideas into
+                        </span>
+                        <br>
+                        <span class="bg-gradient-to-r from-cyan-400 via-violet-400 to-fuchsia-400 bg-clip-text text-transparent">
+                            Visual Diagrams
+                        </span>
+                    </h2>
+
+                    <p class="text-lg sm:text-xl text-slate-400 max-w-2xl mx-auto leading-relaxed">
+                        Create stunning flowcharts, sequence diagrams, and more with our premium rendering engine
+                    </p>
+
+                    <!-- Quick Action Buttons -->
+                    <div class="flex flex-wrap items-center justify-center gap-4 pt-4">
+                        <button
+                            id="loadFileBtn"
+                            class="group inline-flex items-center space-x-2 px-6 py-3 rounded-xl glass-card hover:bg-white/10 text-slate-200 font-medium transition-all duration-300 hover:scale-105 focus:outline-none focus:ring-4 focus:ring-violet-500/30">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                <polyline points="17 8 12 3 7 8"></polyline>
+                                <line x1="12" y1="3" x2="12" y2="15"></line>
+                            </svg>
+                            <span>Upload File</span>
+                        </button>
+
+                        <button
+                            id="clearBtn"
+                            class="inline-flex items-center space-x-2 px-6 py-3 rounded-xl border border-white/10 hover:border-white/20 text-slate-300 hover:text-white font-medium transition-all duration-300 hover:scale-105 focus:outline-none focus:ring-4 focus:ring-slate-500/30">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                <polyline points="3 6 5 6 21 6"></polyline>
+                                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                            </svg>
+                            <span>Clear All</span>
+                        </button>
+                    </div>
+                </section>
 
                 <!-- Input Section -->
-                <section id="inputSection" class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-lg shadow-slate-200/50 dark:shadow-slate-950/50 overflow-hidden transition-all duration-300">
+                <section id="inputSection" class="glass-card rounded-3xl shadow-2xl shadow-violet-500/10 overflow-hidden animate-fade-in-delay">
 
                     <!-- Section Header -->
-                    <div class="flex items-center justify-between px-5 sm:px-6 py-4 border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50">
-                        <h2 class="text-lg font-semibold text-slate-900 dark:text-slate-100">Input</h2>
+                    <div class="flex items-center justify-between px-6 sm:px-8 py-5 border-b border-white/10">
+                        <div class="flex items-center space-x-3">
+                            <div class="w-2 h-2 rounded-full bg-gradient-to-r from-violet-500 to-fuchsia-500"></div>
+                            <h3 class="text-xl font-bold text-white">Input</h3>
+                        </div>
                         <div class="flex items-center space-x-2">
-                            <button
-                                id="loadFileBtn"
-                                class="p-2 rounded-lg text-slate-600 dark:text-slate-400 hover:text-violet-600 dark:hover:text-violet-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:ring-offset-2 dark:focus:ring-offset-slate-900"
-                                aria-label="Load file">
-                                <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                                    <path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"></path>
-                                    <polyline points="13 2 13 9 20 9"></polyline>
-                                </svg>
-                            </button>
-                            <button
-                                id="clearBtn"
-                                class="p-2 rounded-lg text-slate-600 dark:text-slate-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 dark:focus:ring-offset-slate-900"
-                                aria-label="Clear input">
-                                <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                                    <line x1="18" y1="6" x2="6" y2="18"></line>
-                                    <line x1="6" y1="6" x2="18" y2="18"></line>
-                                </svg>
-                            </button>
+                            <div class="text-xs text-slate-500 px-3 py-1 rounded-lg bg-white/5">
+                                <span id="charCount">0</span> characters
+                            </div>
                         </div>
                     </div>
 
                     <!-- File Input (hidden) -->
                     <input type="file" id="fileInput" accept=".md,.txt,.mermaid" hidden>
 
-                    <!-- Markdown Textarea -->
-                    <div class="p-5 sm:p-6">
-                        <textarea
-                            id="markdownInput"
-                            class="w-full h-64 sm:h-80 px-4 py-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-600 font-mono text-sm resize-none focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent transition-all duration-200"
-                            placeholder="Paste your markdown with Mermaid diagrams here...
+                    <!-- Markdown Textarea with Drag-Drop Zone -->
+                    <div class="p-6 sm:p-8">
+                        <div class="relative group gradient-border rounded-2xl">
+                            <textarea
+                                id="markdownInput"
+                                class="w-full h-80 sm:h-96 px-5 py-4 bg-slate-900/50 backdrop-blur-xl rounded-2xl text-slate-100 placeholder-slate-500 font-mono text-sm leading-relaxed resize-none focus:outline-none transition-all duration-300"
+                                placeholder="Paste your markdown with Mermaid diagrams here...
 
 Example:
 ```mermaid
@@ -183,41 +392,61 @@ graph TD
     B -->|No| D[Action 2]
     C --> E[End]
     D --> E
-```"
-                            spellcheck="false"
-                            autocapitalize="off"
-                            autocorrect="off"
-                        ></textarea>
+```
+
+Or drag and drop a .md file here"
+                                spellcheck="false"
+                                autocapitalize="off"
+                                autocorrect="off"
+                            ></textarea>
+
+                            <!-- Drag-drop overlay -->
+                            <div id="dropZone" class="absolute inset-0 rounded-2xl border-2 border-dashed border-violet-500/0 bg-violet-500/0 backdrop-blur-0 flex items-center justify-center opacity-0 transition-all duration-300 pointer-events-none">
+                                <div class="text-center space-y-3">
+                                    <div class="w-16 h-16 mx-auto rounded-full bg-gradient-to-br from-violet-500 to-fuchsia-500 flex items-center justify-center">
+                                        <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                            <polyline points="17 8 12 3 7 8"></polyline>
+                                            <line x1="12" y1="3" x2="12" y2="15"></line>
+                                        </svg>
+                                    </div>
+                                    <p class="text-lg font-semibold text-white">Drop your file here</p>
+                                </div>
+                            </div>
+                        </div>
                     </div>
 
                     <!-- URL Input Option -->
-                    <div class="px-5 sm:px-6 pb-5 sm:pb-6">
-                        <div class="flex flex-col sm:flex-row gap-3">
+                    <div class="px-6 sm:px-8 pb-6 sm:pb-8">
+                        <div class="flex flex-col sm:flex-row gap-3 glass-card rounded-xl p-1">
                             <input
                                 type="url"
                                 id="urlInput"
-                                class="flex-1 px-4 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-600 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent transition-all duration-200"
+                                class="flex-1 px-4 py-3 bg-transparent text-slate-200 placeholder-slate-500 text-sm focus:outline-none"
                                 placeholder="Or paste GitHub Gist / raw markdown URL..."
                             >
                             <button
                                 id="loadUrlBtn"
-                                class="px-5 py-2.5 border border-slate-300 dark:border-slate-700 rounded-xl text-slate-700 dark:text-slate-300 font-medium bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 hover:border-slate-400 dark:hover:border-slate-600 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:ring-offset-2 dark:focus:ring-offset-slate-900 shadow-sm">
-                                Load
+                                class="px-6 py-3 rounded-lg bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:from-violet-500 hover:to-fuchsia-500 text-white font-semibold transition-all duration-300 hover:scale-105 focus:outline-none focus:ring-4 focus:ring-violet-500/30 shimmer overflow-hidden relative">
+                                <span class="relative z-10">Load URL</span>
                             </button>
                         </div>
                     </div>
                 </section>
 
                 <!-- Output Section -->
-                <section id="outputSection" class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-lg shadow-slate-200/50 dark:shadow-slate-950/50 overflow-hidden transition-all duration-300">
+                <section id="outputSection" class="glass-card rounded-3xl shadow-2xl shadow-fuchsia-500/10 overflow-hidden animate-fade-in-delay">
 
                     <!-- Section Header -->
-                    <div class="flex items-center justify-between px-5 sm:px-6 py-4 border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50">
-                        <h2 class="text-lg font-semibold text-slate-900 dark:text-slate-100">Output</h2>
+                    <div class="flex items-center justify-between px-6 sm:px-8 py-5 border-b border-white/10">
+                        <div class="flex items-center space-x-3">
+                            <div class="w-2 h-2 rounded-full bg-gradient-to-r from-fuchsia-500 to-cyan-500"></div>
+                            <h3 class="text-xl font-bold text-white">Output</h3>
+                        </div>
                         <div class="flex items-center space-x-2">
                             <button
                                 id="downloadBtn"
-                                class="p-2 rounded-lg text-slate-600 dark:text-slate-400 hover:text-violet-600 dark:hover:text-violet-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:ring-offset-2 dark:focus:ring-offset-slate-900 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:text-slate-600 disabled:dark:hover:text-slate-400 disabled:hover:bg-transparent"
+                                class="group p-2.5 rounded-lg glass-card hover:bg-white/10 text-slate-400 hover:text-white transition-all duration-300 hover:scale-105 focus:outline-none focus:ring-4 focus:ring-violet-500/30 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:scale-100"
                                 aria-label="Download diagram"
                                 disabled>
                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -228,7 +457,7 @@ graph TD
                             </button>
                             <button
                                 id="shareBtn"
-                                class="p-2 rounded-lg text-slate-600 dark:text-slate-400 hover:text-violet-600 dark:hover:text-violet-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:ring-offset-2 dark:focus:ring-offset-slate-900 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:text-slate-600 disabled:dark:hover:text-slate-400 disabled:hover:bg-transparent"
+                                class="group p-2.5 rounded-lg glass-card hover:bg-white/10 text-slate-400 hover:text-white transition-all duration-300 hover:scale-105 focus:outline-none focus:ring-4 focus:ring-violet-500/30 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:scale-100"
                                 aria-label="Share diagram"
                                 disabled>
                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -243,74 +472,107 @@ graph TD
                     </div>
 
                     <!-- Diagram Container -->
-                    <div id="diagramContainer" class="p-5 sm:p-6">
-                        <div class="flex flex-col items-center justify-center py-16 sm:py-24 text-center">
-                            <div class="p-4 rounded-2xl bg-gradient-to-br from-violet-100 to-blue-100 dark:from-violet-950/30 dark:to-blue-950/30 mb-6">
-                                <svg class="w-16 h-16 text-violet-600 dark:text-violet-400" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
-                                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
-                                    <line x1="9" y1="9" x2="15" y2="9"></line>
-                                    <line x1="9" y1="15" x2="15" y2="15"></line>
-                                </svg>
+                    <div id="diagramContainer" class="p-6 sm:p-8 min-h-[400px]">
+                        <div class="flex flex-col items-center justify-center py-20 sm:py-32 text-center">
+                            <div class="relative mb-8 animate-float">
+                                <div class="absolute inset-0 bg-gradient-to-r from-violet-500 to-fuchsia-500 rounded-3xl blur-3xl opacity-30"></div>
+                                <div class="relative p-6 rounded-3xl glass-card">
+                                    <svg class="w-20 h-20 text-violet-400" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+                                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                                        <line x1="9" y1="9" x2="15" y2="9"></line>
+                                        <line x1="9" y1="15" x2="15" y2="15"></line>
+                                    </svg>
+                                </div>
                             </div>
-                            <p class="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-2">Your diagrams will appear here</p>
-                            <p class="text-sm text-slate-500 dark:text-slate-400">Paste markdown above and tap Render</p>
+                            <h4 class="text-2xl font-bold text-white mb-3">Your diagrams will appear here</h4>
+                            <p class="text-slate-400 max-w-md">Paste markdown above and tap the render button to see the magic happen</p>
                         </div>
                     </div>
 
-                    <!-- Diagram Gallery (for multiple diagrams) -->
-                    <div id="diagramGallery" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-5 sm:p-6" style="display: none;">
-                        <!-- Dynamically populated with diagram thumbnails -->
+                    <!-- Diagram Gallery (Bento Grid Layout) -->
+                    <div id="diagramGallery" class="p-6 sm:p-8" style="display: none;">
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 auto-rows-auto">
+                            <!-- Dynamically populated with diagram cards -->
+                        </div>
                     </div>
                 </section>
 
             </div>
         </main>
 
-        <!-- Bottom Action Bar -->
-        <div class="sticky bottom-0 z-30 border-t border-slate-200/60 dark:border-slate-800/60 bg-gradient-to-r from-white via-slate-50 to-white dark:from-slate-900 dark:via-slate-950 dark:to-slate-900 backdrop-blur-lg backdrop-saturate-150 safe-bottom">
-            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-                <button
-                    id="renderBtn"
-                    class="w-full flex items-center justify-center space-x-3 px-6 py-4 bg-gradient-to-r from-violet-600 to-blue-600 hover:from-violet-700 hover:to-blue-700 text-white font-semibold rounded-xl shadow-lg shadow-violet-500/30 dark:shadow-violet-500/20 hover:shadow-xl hover:shadow-violet-500/40 dark:hover:shadow-violet-500/30 transform hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:ring-offset-2 dark:focus:ring-offset-slate-900">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                        <polygon points="5 3 19 12 5 21 5 3"></polygon>
-                    </svg>
-                    <span>Render Diagram</span>
-                </button>
+        <!-- Bottom Floating Action Bar -->
+        <div class="sticky bottom-0 z-30 safe-bottom animate-fade-in">
+            <div class="mx-4 sm:mx-6 mb-4 sm:mb-6">
+                <div class="max-w-[1400px] mx-auto glass-card rounded-2xl shadow-2xl shadow-violet-500/20 p-4 sm:p-5">
+                    <button
+                        id="renderBtn"
+                        class="group relative w-full flex items-center justify-center space-x-3 px-8 py-4 sm:py-5 bg-gradient-to-r from-violet-600 via-fuchsia-600 to-cyan-600 hover:from-violet-500 hover:to-cyan-500 text-white font-bold text-lg rounded-xl shadow-2xl shadow-violet-500/40 transform hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 focus:outline-none focus:ring-4 focus:ring-violet-500/50 overflow-hidden">
+                        <!-- Shimmer effect -->
+                        <div class="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                            <div class="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent transform -skew-x-12 animate-shimmer"></div>
+                        </div>
+
+                        <svg class="w-6 h-6 relative z-10" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                        </svg>
+                        <span class="relative z-10">Render Diagram</span>
+
+                        <!-- Glow effect -->
+                        <div class="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 blur-2xl bg-gradient-to-r from-violet-500 via-fuchsia-500 to-cyan-500 -z-10"></div>
+                    </button>
+                </div>
             </div>
         </div>
 
         <!-- Toast Notifications -->
-        <div id="toastContainer" class="fixed top-20 right-4 sm:right-6 z-50 space-y-3 max-w-sm safe-right" aria-live="polite"></div>
+        <div id="toastContainer" class="fixed top-24 right-4 sm:right-6 z-50 space-y-3 max-w-sm safe-right" aria-live="polite"></div>
 
         <!-- Loading Overlay -->
-        <div id="loadingOverlay" class="fixed inset-0 z-50 bg-slate-900/40 dark:bg-slate-950/60 backdrop-blur-sm flex items-center justify-center safe-top safe-bottom" style="display: none;">
-            <div class="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl p-8 flex flex-col items-center space-y-4 border border-slate-200 dark:border-slate-800 mx-4">
+        <div id="loadingOverlay" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-xl flex items-center justify-center safe-top safe-bottom" style="display: none;">
+            <div class="glass-card rounded-3xl shadow-2xl p-10 flex flex-col items-center space-y-6 mx-4 animate-scale-in">
                 <div class="relative">
-                    <div class="w-16 h-16 border-4 border-slate-200 dark:border-slate-700 border-t-violet-600 dark:border-t-violet-400 rounded-full animate-spin"></div>
-                    <div class="absolute inset-0 w-16 h-16 border-4 border-transparent border-r-blue-600 dark:border-r-blue-400 rounded-full animate-spin-slow"></div>
+                    <!-- Outer ring -->
+                    <div class="w-20 h-20 border-4 border-white/10 border-t-violet-500 rounded-full animate-spin"></div>
+                    <!-- Inner ring -->
+                    <div class="absolute inset-0 w-20 h-20 border-4 border-transparent border-r-fuchsia-500 rounded-full animate-spin-slow"></div>
+                    <!-- Center glow -->
+                    <div class="absolute inset-0 w-20 h-20 rounded-full bg-gradient-to-r from-violet-500/20 to-fuchsia-500/20 blur-xl"></div>
                 </div>
-                <p class="text-lg font-semibold text-slate-900 dark:text-slate-100">Rendering diagram...</p>
+                <div class="text-center space-y-2">
+                    <p class="text-xl font-bold text-white">Rendering diagram...</p>
+                    <p class="text-sm text-slate-400">This will only take a moment</p>
+                </div>
             </div>
         </div>
 
         <!-- Settings Modal -->
         <div id="settingsModal" class="fixed inset-0 z-50 overflow-y-auto safe-top safe-bottom" style="display: none;">
             <!-- Backdrop -->
-            <div class="fixed inset-0 bg-slate-900/50 dark:bg-slate-950/70 backdrop-blur-sm transition-opacity"></div>
+            <div class="fixed inset-0 bg-slate-950/90 backdrop-blur-2xl transition-opacity"></div>
 
             <!-- Modal Content -->
             <div class="flex min-h-full items-center justify-center p-4">
-                <div class="relative bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 max-w-md w-full overflow-hidden transform transition-all">
+                <div class="relative glass-card rounded-3xl shadow-2xl max-w-lg w-full overflow-hidden transform transition-all animate-scale-in">
+
+                    <!-- Gradient accent line -->
+                    <div class="h-1 bg-gradient-to-r from-violet-500 via-fuchsia-500 to-cyan-500"></div>
 
                     <!-- Modal Header -->
-                    <div class="flex items-center justify-between px-6 py-5 border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50">
-                        <h3 class="text-xl font-semibold text-slate-900 dark:text-slate-100">Settings</h3>
+                    <div class="flex items-center justify-between px-8 py-6 border-b border-white/10">
+                        <div class="flex items-center space-x-3">
+                            <div class="p-2 rounded-lg bg-gradient-to-br from-violet-600/20 to-fuchsia-600/20">
+                                <svg class="w-6 h-6 text-violet-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                    <circle cx="12" cy="12" r="3"></circle>
+                                    <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+                                </svg>
+                            </div>
+                            <h3 class="text-2xl font-bold text-white">Settings</h3>
+                        </div>
                         <button
                             id="closeModalBtn"
-                            class="p-2 rounded-lg text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-violet-500"
+                            class="p-2.5 rounded-lg glass-card hover:bg-white/10 text-slate-400 hover:text-white transition-all duration-300 hover:scale-105 focus:outline-none focus:ring-4 focus:ring-violet-500/30"
                             aria-label="Close">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                                 <line x1="18" y1="6" x2="6" y2="18"></line>
                                 <line x1="6" y1="6" x2="18" y2="18"></line>
                             </svg>
@@ -318,30 +580,66 @@ graph TD
                     </div>
 
                     <!-- Modal Body -->
-                    <div class="px-6 py-5 space-y-5">
+                    <div class="px-8 py-8 space-y-8">
 
-                        <!-- Dark Mode Toggle -->
-                        <div class="flex items-center justify-between py-3">
-                            <div>
-                                <label for="themeToggle" class="text-sm font-medium text-slate-900 dark:text-slate-100 cursor-pointer">Dark Mode</label>
-                                <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Toggle dark theme appearance</p>
+                        <!-- Appearance Section -->
+                        <div class="space-y-4">
+                            <h4 class="text-sm font-semibold text-slate-400 uppercase tracking-wider">Appearance</h4>
+
+                            <!-- Dark Mode Toggle -->
+                            <div class="flex items-center justify-between p-4 rounded-xl glass-card hover:bg-white/5 transition-all duration-300">
+                                <div class="flex items-center space-x-4">
+                                    <div class="p-2 rounded-lg bg-gradient-to-br from-violet-600/20 to-fuchsia-600/20">
+                                        <svg class="w-5 h-5 text-violet-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                                        </svg>
+                                    </div>
+                                    <div>
+                                        <label for="themeToggle" class="text-base font-semibold text-white cursor-pointer block">Dark Mode</label>
+                                        <p class="text-sm text-slate-400 mt-0.5">Premium dark theme enabled</p>
+                                    </div>
+                                </div>
+                                <label class="relative inline-flex items-center cursor-pointer">
+                                    <input type="checkbox" id="themeToggle" class="sr-only peer" checked>
+                                    <div class="w-14 h-7 bg-slate-700 peer-focus:ring-4 peer-focus:ring-violet-500/30 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-gradient-to-r peer-checked:from-violet-600 peer-checked:to-fuchsia-600 shadow-lg"></div>
+                                </label>
                             </div>
-                            <label class="relative inline-flex items-center cursor-pointer">
-                                <input type="checkbox" id="themeToggle" class="sr-only peer">
-                                <div class="w-11 h-6 bg-slate-200 dark:bg-slate-700 peer-focus:ring-2 peer-focus:ring-violet-500 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-violet-600"></div>
-                            </label>
                         </div>
 
-                        <!-- Auto-render Toggle -->
-                        <div class="flex items-center justify-between py-3">
-                            <div>
-                                <label for="autoRender" class="text-sm font-medium text-slate-900 dark:text-slate-100 cursor-pointer">Auto-render on input</label>
-                                <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Automatically render as you type</p>
+                        <!-- Divider -->
+                        <div class="h-px bg-gradient-to-r from-transparent via-white/10 to-transparent"></div>
+
+                        <!-- Behavior Section -->
+                        <div class="space-y-4">
+                            <h4 class="text-sm font-semibold text-slate-400 uppercase tracking-wider">Behavior</h4>
+
+                            <!-- Auto-render Toggle -->
+                            <div class="flex items-center justify-between p-4 rounded-xl glass-card hover:bg-white/5 transition-all duration-300">
+                                <div class="flex items-center space-x-4">
+                                    <div class="p-2 rounded-lg bg-gradient-to-br from-fuchsia-600/20 to-cyan-600/20">
+                                        <svg class="w-5 h-5 text-fuchsia-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                            <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+                                        </svg>
+                                    </div>
+                                    <div>
+                                        <label for="autoRender" class="text-base font-semibold text-white cursor-pointer block">Auto-render</label>
+                                        <p class="text-sm text-slate-400 mt-0.5">Render diagrams as you type</p>
+                                    </div>
+                                </div>
+                                <label class="relative inline-flex items-center cursor-pointer">
+                                    <input type="checkbox" id="autoRender" class="sr-only peer">
+                                    <div class="w-14 h-7 bg-slate-700 peer-focus:ring-4 peer-focus:ring-violet-500/30 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-gradient-to-r peer-checked:from-fuchsia-600 peer-checked:to-cyan-600 shadow-lg"></div>
+                                </label>
                             </div>
-                            <label class="relative inline-flex items-center cursor-pointer">
-                                <input type="checkbox" id="autoRender" class="sr-only peer">
-                                <div class="w-11 h-6 bg-slate-200 dark:bg-slate-700 peer-focus:ring-2 peer-focus:ring-violet-500 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-violet-600"></div>
-                            </label>
+                        </div>
+
+                        <!-- Divider -->
+                        <div class="h-px bg-gradient-to-r from-transparent via-white/10 to-transparent"></div>
+
+                        <!-- About Section -->
+                        <div class="text-center space-y-2 pt-2">
+                            <p class="text-sm text-slate-400">MermaidVisualizer Premium</p>
+                            <p class="text-xs text-slate-500">Powered by Mermaid.js</p>
                         </div>
 
                     </div>
@@ -366,6 +664,58 @@ graph TD
                     });
             });
         }
+
+        // Character counter for textarea
+        const markdownInput = document.getElementById('markdownInput');
+        const charCount = document.getElementById('charCount');
+
+        if (markdownInput && charCount) {
+            markdownInput.addEventListener('input', () => {
+                charCount.textContent = markdownInput.value.length.toLocaleString();
+            });
+        }
+
+        // Drag and drop functionality
+        const dropZone = document.getElementById('dropZone');
+        const textarea = document.getElementById('markdownInput');
+
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+            textarea.addEventListener(eventName, preventDefaults, false);
+        });
+
+        function preventDefaults(e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+
+        ['dragenter', 'dragover'].forEach(eventName => {
+            textarea.addEventListener(eventName, () => {
+                dropZone.classList.add('opacity-100', 'border-violet-500/50', 'bg-violet-500/10', 'backdrop-blur-xl');
+                dropZone.classList.remove('opacity-0', 'border-violet-500/0', 'bg-violet-500/0', 'backdrop-blur-0');
+            }, false);
+        });
+
+        ['dragleave', 'drop'].forEach(eventName => {
+            textarea.addEventListener(eventName, () => {
+                dropZone.classList.remove('opacity-100', 'border-violet-500/50', 'bg-violet-500/10', 'backdrop-blur-xl');
+                dropZone.classList.add('opacity-0', 'border-violet-500/0', 'bg-violet-500/0', 'backdrop-blur-0');
+            }, false);
+        });
+
+        textarea.addEventListener('drop', (e) => {
+            const dt = e.dataTransfer;
+            const files = dt.files;
+
+            if (files.length > 0) {
+                const file = files[0];
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    textarea.value = event.target.result;
+                    charCount.textContent = textarea.value.length.toLocaleString();
+                };
+                reader.readAsText(file);
+            }
+        }, false);
     </script>
 
     <!-- Main App JavaScript -->
