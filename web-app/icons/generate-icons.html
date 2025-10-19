@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MermaidVisualizer Icon Generator</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .container {
+            background: white;
+            border-radius: 16px;
+            padding: 40px;
+            max-width: 900px;
+            width: 100%;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 2em;
+        }
+
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 1.1em;
+        }
+
+        .instructions {
+            background: #f8f9fa;
+            border-left: 4px solid #667eea;
+            padding: 20px;
+            margin-bottom: 30px;
+            border-radius: 4px;
+        }
+
+        .instructions h2 {
+            color: #667eea;
+            font-size: 1.2em;
+            margin-bottom: 10px;
+        }
+
+        .instructions ol {
+            margin-left: 20px;
+            color: #555;
+        }
+
+        .instructions li {
+            margin-bottom: 8px;
+            line-height: 1.5;
+        }
+
+        .preview-section {
+            margin-bottom: 30px;
+        }
+
+        .preview-section h3 {
+            color: #333;
+            margin-bottom: 15px;
+        }
+
+        .preview-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: #f8f9fa;
+            padding: 30px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        #iconPreview {
+            border-radius: 16px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        .controls {
+            margin-bottom: 30px;
+        }
+
+        .button-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 25px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .download-all {
+            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+            grid-column: 1 / -1;
+        }
+
+        .status {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+            font-weight: 500;
+            display: none;
+        }
+
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+            display: block;
+        }
+
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+            display: block;
+        }
+
+        .footer {
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 2px solid #eee;
+            text-align: center;
+            color: #666;
+            font-size: 0.9em;
+        }
+
+        .icon-info {
+            background: #e3f2fd;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+
+        .icon-info h4 {
+            color: #1976d2;
+            margin-bottom: 10px;
+        }
+
+        .icon-info ul {
+            margin-left: 20px;
+            color: #555;
+        }
+
+        .icon-info li {
+            margin-bottom: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎨 MermaidVisualizer Icon Generator</h1>
+        <p class="subtitle">Generate professional PWA icons for your application</p>
+
+        <div class="instructions">
+            <h2>📋 How to Use</h2>
+            <ol>
+                <li>Review the icon preview below - this is how your app icon will look</li>
+                <li>Click individual size buttons to download specific icon sizes, or use "Download All Icons" for convenience</li>
+                <li>Save the downloaded PNG files to <code>/web-app/icons/</code> directory</li>
+                <li>Update your <code>manifest.json</code> to reference these icon files</li>
+                <li>Test your PWA to ensure icons display correctly on all devices</li>
+            </ol>
+        </div>
+
+        <div class="icon-info">
+            <h4>📱 Generated Icon Sizes</h4>
+            <ul>
+                <li><strong>152×152</strong> - iOS home screen (iPad)</li>
+                <li><strong>180×180</strong> - iOS home screen (iPhone)</li>
+                <li><strong>192×192</strong> - Android home screen</li>
+                <li><strong>512×512</strong> - PWA splash screen & app stores</li>
+            </ul>
+        </div>
+
+        <div class="preview-section">
+            <h3>Preview (192×192)</h3>
+            <div class="preview-container">
+                <canvas id="iconPreview" width="192" height="192"></canvas>
+            </div>
+        </div>
+
+        <div class="controls">
+            <h3>Download Icons</h3>
+            <div class="button-grid">
+                <button onclick="downloadIcon(152)">Download 152×152</button>
+                <button onclick="downloadIcon(180)">Download 180×180</button>
+                <button onclick="downloadIcon(192)">Download 192×192</button>
+                <button onclick="downloadIcon(512)">Download 512×512</button>
+                <button class="download-all" onclick="downloadAllIcons()">⬇️ Download All Icons</button>
+            </div>
+        </div>
+
+        <div id="status" class="status"></div>
+
+        <div class="footer">
+            <p><strong>MermaidVisualizer</strong> - Professional Diagram Visualization Tool</p>
+            <p style="margin-top: 5px; font-size: 0.85em;">Generated icons use a modern gradient design with the distinctive "M" branding</p>
+        </div>
+    </div>
+
+    <script>
+        // Create SVG icon design
+        function createIconSVG(size) {
+            const svg = `
+                <svg width="${size}" height="${size}" xmlns="http://www.w3.org/2000/svg">
+                    <defs>
+                        <linearGradient id="bgGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                            <stop offset="0%" style="stop-color:#667eea;stop-opacity:1" />
+                            <stop offset="100%" style="stop-color:#764ba2;stop-opacity:1" />
+                        </linearGradient>
+
+                        <linearGradient id="patternGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                            <stop offset="0%" style="stop-color:#ffffff;stop-opacity:0.1" />
+                            <stop offset="100%" style="stop-color:#ffffff;stop-opacity:0.05" />
+                        </linearGradient>
+                    </defs>
+
+                    <!-- Background -->
+                    <rect width="${size}" height="${size}" fill="url(#bgGradient)" rx="${size * 0.12}"/>
+
+                    <!-- Decorative flowchart pattern -->
+                    <g opacity="0.15" stroke="white" fill="none" stroke-width="${size * 0.01}">
+                        <!-- Top-left flowchart nodes -->
+                        <rect x="${size * 0.08}" y="${size * 0.08}" width="${size * 0.12}" height="${size * 0.08}" rx="${size * 0.01}" stroke-width="${size * 0.008}"/>
+                        <rect x="${size * 0.08}" y="${size * 0.20}" width="${size * 0.12}" height="${size * 0.08}" rx="${size * 0.01}" stroke-width="${size * 0.008}"/>
+
+                        <!-- Connection lines -->
+                        <line x1="${size * 0.14}" y1="${size * 0.16}" x2="${size * 0.14}" y2="${size * 0.20}" stroke-width="${size * 0.008}"/>
+
+                        <!-- Bottom-right flowchart nodes -->
+                        <circle cx="${size * 0.85}" cy="${size * 0.80}" r="${size * 0.05}" stroke-width="${size * 0.008}"/>
+                        <rect x="${size * 0.74}" y="${size * 0.88}" width="${size * 0.12}" height="${size * 0.06}" rx="${size * 0.01}" stroke-width="${size * 0.008}"/>
+                        <line x1="${size * 0.85}" y1="${size * 0.85}" x2="${size * 0.80}" y2="${size * 0.88}" stroke-width="${size * 0.008}"/>
+                    </g>
+
+                    <!-- Large "M" letter -->
+                    <text
+                        x="50%"
+                        y="50%"
+                        font-family="'Arial Black', 'Arial Bold', sans-serif"
+                        font-size="${size * 0.5}"
+                        font-weight="900"
+                        fill="white"
+                        text-anchor="middle"
+                        dominant-baseline="central"
+                        letter-spacing="${size * -0.02}">M</text>
+
+                    <!-- Subtle shine effect on top -->
+                    <ellipse cx="${size * 0.5}" cy="${size * 0.2}" rx="${size * 0.3}" ry="${size * 0.15}" fill="url(#patternGradient)"/>
+                </svg>
+            `;
+            return svg;
+        }
+
+        // Convert SVG to Canvas
+        function svgToCanvas(svgString, size, callback) {
+            const canvas = document.createElement('canvas');
+            canvas.width = size;
+            canvas.height = size;
+            const ctx = canvas.getContext('2d');
+
+            const img = new Image();
+            const blob = new Blob([svgString], { type: 'image/svg+xml' });
+            const url = URL.createObjectURL(blob);
+
+            img.onload = function() {
+                ctx.drawImage(img, 0, 0, size, size);
+                URL.revokeObjectURL(url);
+                callback(canvas);
+            };
+
+            img.onerror = function() {
+                showStatus('Error loading SVG image', 'error');
+                URL.revokeObjectURL(url);
+            };
+
+            img.src = url;
+        }
+
+        // Download icon in specified size
+        function downloadIcon(size) {
+            const button = event.target;
+            button.disabled = true;
+            button.textContent = 'Generating...';
+
+            const svg = createIconSVG(size);
+
+            svgToCanvas(svg, size, function(canvas) {
+                canvas.toBlob(function(blob) {
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `icon-${size}x${size}.png`;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(url);
+
+                    button.disabled = false;
+                    button.textContent = `Download ${size}×${size}`;
+                    showStatus(`✅ Downloaded icon-${size}x${size}.png`, 'success');
+                }, 'image/png');
+            });
+        }
+
+        // Download all icon sizes
+        async function downloadAllIcons() {
+            const button = event.target;
+            button.disabled = true;
+            button.textContent = 'Generating all icons...';
+
+            const sizes = [152, 180, 192, 512];
+            let completed = 0;
+
+            for (const size of sizes) {
+                await new Promise((resolve) => {
+                    const svg = createIconSVG(size);
+
+                    svgToCanvas(svg, size, function(canvas) {
+                        canvas.toBlob(function(blob) {
+                            const url = URL.createObjectURL(blob);
+                            const a = document.createElement('a');
+                            a.href = url;
+                            a.download = `icon-${size}x${size}.png`;
+                            document.body.appendChild(a);
+                            a.click();
+                            document.body.removeChild(a);
+                            URL.revokeObjectURL(url);
+
+                            completed++;
+                            button.textContent = `Generating... (${completed}/${sizes.length})`;
+
+                            // Small delay between downloads to prevent browser blocking
+                            setTimeout(resolve, 300);
+                        }, 'image/png');
+                    });
+                });
+            }
+
+            button.disabled = false;
+            button.textContent = '⬇️ Download All Icons';
+            showStatus(`✅ Successfully downloaded all ${sizes.length} icon sizes!`, 'success');
+        }
+
+        // Show status message
+        function showStatus(message, type) {
+            const statusEl = document.getElementById('status');
+            statusEl.textContent = message;
+            statusEl.className = `status ${type}`;
+
+            if (type === 'success') {
+                setTimeout(() => {
+                    statusEl.style.display = 'none';
+                }, 5000);
+            }
+        }
+
+        // Initialize preview on page load
+        window.addEventListener('DOMContentLoaded', function() {
+            const previewCanvas = document.getElementById('iconPreview');
+            const svg = createIconSVG(192);
+
+            svgToCanvas(svg, 192, function(canvas) {
+                const ctx = previewCanvas.getContext('2d');
+                ctx.drawImage(canvas, 0, 0, 192, 192);
+            });
+        });
+    </script>
+</body>
+</html>
