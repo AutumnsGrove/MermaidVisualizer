@@ -33,7 +33,10 @@ MermaidVisualizer is a Python tool that recursively scans directories for markdo
 git clone <repository-url>
 cd MermaidVisualizer
 
-# Install Chrome headless shell for diagram rendering
+# Install mermaid-cli (required for diagram rendering)
+npm install -g @mermaid-js/mermaid-cli
+
+# Install Chrome headless shell for Puppeteer
 npx puppeteer browsers install chrome-headless-shell
 
 # Install globally with UV (recommended)
