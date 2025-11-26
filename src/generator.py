@@ -1,8 +1,10 @@
 """
 Mermaid diagram generator module.
 
-This module provides functionality to generate PNG and SVG diagrams from Mermaid syntax
-using the mermaid-cli tool (mmdc command).
+This module provides functionality to generate PNG and SVG diagrams from Mermaid syntax.
+Supports two rendering backends:
+1. Local: mermaid-cli (requires Node.js, Chrome/Puppeteer)
+2. API: mermaid.ink (requires only 'requests' package - slim install)
 """
 
 import glob
@@ -14,6 +16,24 @@ from pathlib import Path
 from typing import Optional, Tuple
 
 logger = logging.getLogger(__name__)
+
+# Global flag for API mode
+_use_api_mode = False
+
+
+def set_api_mode(enabled: bool) -> None:
+    """Enable or disable API rendering mode."""
+    global _use_api_mode
+    _use_api_mode = enabled
+    if enabled:
+        logger.info("Using mermaid.ink API for diagram rendering (slim mode)")
+    else:
+        logger.debug("Using local mermaid-cli for diagram rendering")
+
+
+def is_api_mode() -> bool:
+    """Check if API rendering mode is enabled."""
+    return _use_api_mode
 
 
 def find_chrome_executable() -> Optional[str]:
@@ -389,3 +409,50 @@ def generate_diagram(
                 logger.warning(
                     f"Failed to clean up temporary file {temp_input_path}: {str(e)}"
                 )
+
+
+def generate(
+    mermaid_content: str,
+    output_path: Path,
+    format: str = "png",
+    scale: int = 3,
+    width: int = 2400,
+    theme: str = "default",
+    background_color: str = "white",
+) -> bool:
+    """
+    Generate a diagram using the configured backend (local or API).
+
+    This is the main entry point for diagram generation. It automatically
+    dispatches to either local mermaid-cli or the mermaid.ink API based
+    on the current mode.
+
+    Args:
+        mermaid_content: The Mermaid diagram syntax as a string
+        output_path: Path where the output diagram should be saved
+        format: Output format, either "png" or "svg" (default: "png")
+        scale: Scale factor for PNG output (local mode only)
+        width: Width of output image in pixels (local mode only)
+        theme: Mermaid theme (API mode only)
+        background_color: Background color (API mode only)
+
+    Returns:
+        True if diagram generation was successful, False otherwise
+    """
+    if _use_api_mode:
+        from src.api_renderer import generate_diagram_api
+        return generate_diagram_api(
+            mermaid_content=mermaid_content,
+            output_path=output_path,
+            format=format,
+            theme=theme,
+            background_color=background_color,
+        )
+    else:
+        return generate_diagram(
+            mermaid_content=mermaid_content,
+            output_path=output_path,
+            format=format,
+            scale=scale,
+            width=width,
+        )
