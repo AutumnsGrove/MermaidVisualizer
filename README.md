@@ -19,31 +19,46 @@ MermaidVisualizer is a Python tool that recursively scans directories for markdo
 
 ## Installation
 
-### Prerequisites
+### Slim Install (Recommended - No Node.js Required!)
 
-- Python 3.10+
-- Node.js (for Mermaid CLI via npx)
-- UV package manager (recommended)
-- Chrome headless shell (for Puppeteer/Mermaid rendering)
-
-### Install as System-Wide Command
+The slimmest way to install - uses the mermaid.ink API for rendering:
 
 ```bash
-# Clone the repository
-git clone <repository-url>
-cd MermaidVisualizer
+# Install with API rendering support (just Python + requests)
+pip install mermaid-visualizer[api]
 
-# Install mermaid-cli (required for diagram rendering)
+# Or with UV
+uv tool install mermaid-visualizer[api]
+```
+
+**That's it!** No Node.js, no Chrome, no Puppeteer. Use the `--api` flag:
+
+```bash
+mermaid generate --api -i ./docs
+mermaid generate --api -i ./docs/architecture.md -f svg
+```
+
+### Full Install (Local Rendering)
+
+For offline use or large diagrams, install with local mermaid-cli:
+
+#### Prerequisites
+- Python 3.10+
+- Node.js (for Mermaid CLI via npx)
+- Chrome headless shell (for Puppeteer)
+
+```bash
+# Install Python package with all features
+pip install mermaid-visualizer[full]
+
+# Install mermaid-cli
 npm install -g @mermaid-js/mermaid-cli
 
 # Install Chrome headless shell for Puppeteer
 npx puppeteer browsers install chrome-headless-shell
-
-# Install globally with UV (recommended)
-uv tool install --editable .
 ```
 
-Now you can use the `mermaid` command from anywhere:
+Now you can use local rendering (no `--api` flag needed):
 
 ```bash
 mermaid generate --input-dir ./docs
@@ -51,36 +66,41 @@ mermaid scan
 mermaid clean
 ```
 
-### Install for Development
+### Development Install
 
 ```bash
+# Clone the repository
+git clone <repository-url>
+cd MermaidVisualizer
+
 # Create virtual environment
 uv venv
 
 # Activate virtual environment
 source .venv/bin/activate  # On Windows: .venv\Scripts\activate
 
-# Install dependencies
-uv pip install -r requirements.txt
+# Install with all dependencies
+uv pip install -e ".[full,dev]"
 ```
 
 ## Usage
 
 ### Basic Commands
 
-If installed with `uv tool install`:
-
 ```bash
-# Generate diagrams from markdown files in current directory
+# Generate diagrams using API (slim install)
+mermaid generate --api
+
+# Generate diagrams using local mermaid-cli (full install)
 mermaid generate
 
 # Specify input and output directories
-mermaid generate --input-dir ./docs --output-dir ./diagrams
+mermaid generate --api --input-dir ./docs --output-dir ./diagrams
 
 # Generate SVG instead of PNG
-mermaid generate --format svg
+mermaid generate --api --format svg
 
-# High-resolution output
+# High-resolution output (local rendering only)
 mermaid generate --scale 3 --width 2400
 
 # Scan without generating (dry run)
@@ -199,10 +219,12 @@ mypy src/
 MermaidVisualizer/
 ├── src/
 │   ├── __init__.py
+│   ├── cli.py            # CLI interface
 │   ├── extractor.py      # Mermaid block extraction
-│   ├── generator.py      # Diagram generation
+│   ├── generator.py      # Diagram generation (local mermaid-cli)
+│   ├── api_renderer.py   # API rendering (mermaid.ink - slim install)
 │   ├── file_handler.py   # File system operations
-│   └── cli.py            # CLI interface
+│   └── gist_handler.py   # GitHub Gist support
 ├── tests/
 │   ├── __init__.py
 │   ├── test_extractor.py
@@ -210,7 +232,7 @@ MermaidVisualizer/
 │   └── sample_data/
 ├── diagrams/             # Generated output (gitignored)
 ├── config.yaml           # Configuration
-└── requirements.txt
+└── pyproject.toml        # Package configuration
 ```
 
 ## License
@@ -259,9 +281,10 @@ npx @mermaid-js/mermaid-cli --version
 
 ## Roadmap
 
+- [x] API mode for cloud rendering (mermaid.ink)
+- [x] Slim install option (no Node.js/Chrome required)
 - [ ] Batch processing optimization
 - [ ] Custom theme support
 - [ ] Docker container for isolated execution
-- [ ] API mode for programmatic access
 - [ ] Plugin system for custom processors
 - [ ] Cloud storage integration (S3, GCS)
