@@ -5,6 +5,8 @@ This module provides functionality to generate PNG and SVG diagrams from Mermaid
 Supports two rendering backends:
 1. Local: mermaid-cli (requires Node.js, Chrome/Puppeteer)
 2. API: mermaid.ink (requires only 'requests' package - slim install)
+
+Uses Rich for beautiful console output and progress feedback.
 """
 
 import glob
@@ -15,7 +17,12 @@ import tempfile
 from pathlib import Path
 from typing import Optional, Tuple
 
+from rich.console import Console
+
 logger = logging.getLogger(__name__)
+
+# Console for rich output
+console = Console()
 
 # Global flag for API mode
 _use_api_mode = False
@@ -159,6 +166,9 @@ def validate_mermaid_syntax(mermaid_content: str) -> Tuple[bool, str]:
         )
 
     # Try to generate a diagram to validate syntax
+    temp_input_path = None
+    temp_output_path = None
+
     try:
         with tempfile.NamedTemporaryFile(
             mode="w", suffix=".mmd", delete=False
@@ -178,7 +188,7 @@ def validate_mermaid_syntax(mermaid_content: str) -> Tuple[bool, str]:
 
             result = subprocess.run(
                 [
-                    "/opt/homebrew/bin/npx",
+                    "npx",
                     "-y",
                     "@mermaid-js/mermaid-cli",
                     "-i",
@@ -200,16 +210,16 @@ def validate_mermaid_syntax(mermaid_content: str) -> Tuple[bool, str]:
 
         finally:
             # Clean up temporary files
-            if temp_input_path.exists():
+            if temp_input_path and temp_input_path.exists():
                 temp_input_path.unlink()
-            if temp_output_path.exists():
+            if temp_output_path and temp_output_path.exists():
                 temp_output_path.unlink()
 
     except subprocess.TimeoutExpired:
         logger.error("Validation timed out after 30 seconds")
-        if temp_input_path.exists():
+        if temp_input_path and temp_input_path.exists():
             temp_input_path.unlink()
-        if temp_output_path.exists():
+        if temp_output_path and temp_output_path.exists():
             temp_output_path.unlink()
         return False, "Validation timed out - diagram may be too complex"
 
@@ -219,7 +229,7 @@ def validate_mermaid_syntax(mermaid_content: str) -> Tuple[bool, str]:
 
     except Exception as e:
         logger.error(f"Unexpected error during validation: {str(e)}")
-        if temp_input_path.exists():
+        if temp_input_path and temp_input_path.exists():
             temp_input_path.unlink()
         if temp_output_path and temp_output_path.exists():
             temp_output_path.unlink()
@@ -234,7 +244,7 @@ def generate_diagram(
     width: int = 2400,
 ) -> bool:
     """
-    Generate a diagram image from Mermaid syntax.
+    Generate a diagram image from Mermaid syntax using local mermaid-cli.
 
     This function takes Mermaid diagram content and generates either a PNG or SVG
     output file using the mermaid-cli tool (mmdc command via npx).
@@ -319,7 +329,7 @@ def generate_diagram(
 
         # Build command with scale and width parameters for high resolution
         cmd = [
-            "/opt/homebrew/bin/npx",
+            "npx",
             "-y",
             "@mermaid-js/mermaid-cli",
             "-i",
@@ -441,6 +451,7 @@ def generate(
     """
     if _use_api_mode:
         from src.api_renderer import generate_diagram_api
+
         return generate_diagram_api(
             mermaid_content=mermaid_content,
             output_path=output_path,

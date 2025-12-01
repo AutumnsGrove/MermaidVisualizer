@@ -5,6 +5,8 @@ This module provides a zero-dependency alternative to mermaid-cli by using
 the mermaid.ink public API for rendering diagrams. This enables a slim
 installation that doesn't require Node.js, Chrome, or Puppeteer.
 
+Uses Rich for beautiful console output and progress feedback.
+
 API: https://mermaid.ink
 """
 
@@ -14,7 +16,12 @@ import zlib
 from pathlib import Path
 from typing import Optional
 
+from rich.console import Console
+
 logger = logging.getLogger(__name__)
+
+# Console for rich output
+console = Console()
 
 # mermaid.ink API endpoint
 MERMAID_INK_BASE = "https://mermaid.ink"
@@ -109,7 +116,7 @@ def generate_diagram_api(
         if background_color and background_color != "white":
             params["bgColor"] = background_color
 
-        logger.info(f"Fetching diagram from mermaid.ink API...")
+        logger.info("Fetching diagram from mermaid.ink API...")
         logger.debug(f"API URL length: {len(url)} characters")
 
         # Make the request
@@ -161,7 +168,10 @@ def check_api_available() -> bool:
     """
     try:
         import requests
-        response = requests.get(f"{MERMAID_INK_BASE}/img/pako:eNpLSS1OLSrLz0kFABfgBC0", timeout=5)
+
+        response = requests.get(
+            f"{MERMAID_INK_BASE}/img/pako:eNpLSS1OLSrLz0kFABfgBC0", timeout=5
+        )
         return response.status_code == 200
     except Exception:
         return False

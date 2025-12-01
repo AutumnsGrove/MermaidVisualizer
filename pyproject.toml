@@ -23,6 +23,7 @@ classifiers = [
 ]
 dependencies = [
     "click>=8.1.0",
+    "rich>=13.7.0",
 ]
 
 [project.optional-dependencies]
@@ -34,7 +35,6 @@ api = [
 full = [
     "pyyaml>=6.0",
     "watchdog>=3.0.0",
-    "rich>=13.7.0",
     "requests>=2.31.0",
 ]
 # Development dependencies

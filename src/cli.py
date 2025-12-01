@@ -2,67 +2,62 @@
 Command-line interface for MermaidVisualizer.
 
 This module provides a CLI using Click framework for extracting Mermaid diagrams
-from markdown files and generating visualizations.
-
-Supports two installation modes:
-- Slim: Only click required, API rendering, plain text output
-- Full: All features including rich output, local rendering, gist support
+from markdown files and generating visualizations. Uses Rich for beautiful
+terminal output with progress bars, tables, and styled text.
 """
 
 import logging
-import os
 import sys
+from dataclasses import dataclass
 from pathlib import Path
 from typing import List, Optional
-from dataclasses import dataclass
 
 import click
-
-# Optional rich imports (for full install)
-try:
-    from rich.console import Console
-    from rich.progress import (
-        Progress,
-        SpinnerColumn,
-        TextColumn,
-        BarColumn,
-        TaskProgressColumn,
-        TimeElapsedColumn,
-    )
-    from rich.table import Table
-    from rich.panel import Panel
-    from rich.logging import RichHandler
-    RICH_AVAILABLE = True
-except ImportError:
-    RICH_AVAILABLE = False
-    Console = None
-    RichHandler = None
+from rich.console import Console
+from rich.logging import RichHandler
+from rich.panel import Panel
+from rich.progress import (
+    BarColumn,
+    Progress,
+    SpinnerColumn,
+    TaskProgressColumn,
+    TextColumn,
+    TimeElapsedColumn,
+)
+from rich.rule import Rule
+from rich.table import Table
+from rich.text import Text
+from rich.theme import Theme
 
 # Import core modules
 from . import extractor
-from . import generator
 from . import file_handler
+from . import generator
 
 # Optional gist handler (requires requests)
 try:
     from . import gist_handler
+
     GIST_AVAILABLE = True
 except ImportError:
     gist_handler = None
     GIST_AVAILABLE = False
 
-# Console setup - fallback to plain output if rich not available
-if RICH_AVAILABLE:
-    console = Console()
-else:
-    # Simple console fallback
-    class SimpleConsole:
-        def print(self, msg="", **kwargs):
-            # Strip rich markup for plain output
-            import re
-            clean = re.sub(r'\[/?[^\]]+\]', '', str(msg))
-            print(clean)
-    console = SimpleConsole()
+# Custom theme for consistent styling
+custom_theme = Theme(
+    {
+        "info": "cyan",
+        "warning": "yellow",
+        "error": "bold red",
+        "success": "bold green",
+        "highlight": "bold cyan",
+        "muted": "dim",
+        "header": "bold magenta",
+    }
+)
+
+# Global console instance with custom theme
+console = Console(theme=custom_theme)
 
 
 @dataclass
@@ -81,24 +76,63 @@ class ProcessingResult:
 
 def setup_logging(verbose: bool = False) -> None:
     """
-    Configure logging with Rich handler (if available) or basic handler.
+    Configure logging with Rich handler for beautiful output.
 
     Args:
         verbose: If True, set logging level to DEBUG; otherwise INFO
     """
     level = logging.DEBUG if verbose else logging.INFO
 
-    if RICH_AVAILABLE:
-        logging.basicConfig(
-            level=level,
-            format="%(message)s",
-            handlers=[RichHandler(console=console, rich_tracebacks=True)],
+    logging.basicConfig(
+        level=level,
+        format="%(message)s",
+        datefmt="[%X]",
+        handlers=[
+            RichHandler(
+                console=console,
+                rich_tracebacks=True,
+                tracebacks_show_locals=verbose,
+                show_time=verbose,
+                show_path=verbose,
+            )
+        ],
+    )
+
+
+def print_header(title: str, subtitle: Optional[str] = None) -> None:
+    """Print a styled header panel."""
+    content = Text()
+    content.append(title, style="bold cyan")
+    if subtitle:
+        content.append(f"\n{subtitle}", style="dim")
+
+    console.print(
+        Panel(
+            content,
+            border_style="cyan",
+            padding=(1, 2),
         )
-    else:
-        logging.basicConfig(
-            level=level,
-            format="%(levelname)s: %(message)s",
-        )
+    )
+
+
+def print_success(message: str) -> None:
+    """Print a success message."""
+    console.print(f"[success]{message}[/success]")
+
+
+def print_error(message: str) -> None:
+    """Print an error message."""
+    console.print(f"[error]{message}[/error]")
+
+
+def print_warning(message: str) -> None:
+    """Print a warning message."""
+    console.print(f"[warning]{message}[/warning]")
+
+
+def print_info(label: str, value: str) -> None:
+    """Print an info line with label and value."""
+    console.print(f"[info]{label}:[/info] {value}")
 
 
 def validate_input_path(ctx, param, value):
@@ -111,7 +145,7 @@ def validate_input_path(ctx, param, value):
     path = Path(value).resolve()
     if not path.exists():
         raise click.BadParameter(f"Path does not exist: {value}")
-    if path.is_file() and not path.suffix.lower() in [".md", ".markdown"]:
+    if path.is_file() and path.suffix.lower() not in [".md", ".markdown"]:
         raise click.BadParameter(
             f"File must be a markdown file (.md or .markdown): {value}"
         )
@@ -136,10 +170,7 @@ def validate_output_format(ctx, param, value):
 def cli(ctx):
     """
     \b
-    ╔══════════════════════════════════════════════════════════════════════════╗
-    ║                        MermaidVisualizer v0.1.0                          ║
-    ║          Automated Mermaid Diagram Extraction & Generation Tool          ║
-    ╚══════════════════════════════════════════════════════════════════════════╝
+    MermaidVisualizer - Automated Mermaid Diagram Extraction & Generation
 
     Extract Mermaid diagrams from markdown files and generate visual diagrams
     in PNG or SVG format. Supports recursive directory scanning, multiple
@@ -172,16 +203,9 @@ def cli(ctx):
 
     \b
     SUPPORTED DIAGRAM TYPES:
-      • Flowcharts (graph, flowchart)
-      • Sequence Diagrams
-      • Class Diagrams
-      • State Diagrams (stateDiagram-v2)
-      • Entity Relationship Diagrams (erDiagram)
-      • Gantt Charts
-      • Pie Charts
-      • User Journey Diagrams
-      • Git Graphs
-      • Mindmaps, Timelines, and more
+      Flowcharts (graph, flowchart), Sequence Diagrams, Class Diagrams,
+      State Diagrams, Entity Relationship Diagrams, Gantt Charts,
+      Pie Charts, User Journey Diagrams, Git Graphs, Mindmaps, Timelines
 
     Use 'mermaid COMMAND --help' for detailed information on each command.
     """
@@ -372,23 +396,21 @@ def generate(
     # Enable API mode if requested
     if api:
         generator.set_api_mode(True)
-        console.print("[cyan]Mode:[/cyan] API rendering (mermaid.ink)")
-    else:
-        generator.set_api_mode(False)
 
     output_path = Path(output_dir).resolve()
 
-    if RICH_AVAILABLE:
-        console.print(
-            Panel.fit(
-                "[bold cyan]MermaidVisualizer - Generate Diagrams[/bold cyan]",
-                border_style="cyan",
-            )
-        )
+    # Print header
+    print_header(
+        "MermaidVisualizer - Generate Diagrams",
+        "Extracting and rendering Mermaid diagrams from markdown",
+    )
+
+    # Show mode
+    console.print()
+    if api:
+        print_info("Mode", "API rendering (mermaid.ink)")
     else:
-        console.print("=" * 50)
-        console.print("MermaidVisualizer - Generate Diagrams")
-        console.print("=" * 50)
+        print_info("Mode", "Local rendering (mermaid-cli)")
 
     try:
         # Ensure output directory exists
@@ -401,8 +423,8 @@ def generate(
         # Check if --gist flag was used
         if gist:
             if not GIST_AVAILABLE:
-                console.print("[red]Error:[/red] Gist support requires 'requests' package.")
-                console.print("Install with: pip install mermaid-visualizer[api]")
+                print_error("Gist support requires 'requests' package.")
+                console.print("Install with: [cyan]pip install mermaid-visualizer[api][/cyan]")
                 sys.exit(1)
             gist_url = gist
             logger.info(f"Using gist from --gist flag: {gist_url}")
@@ -414,77 +436,68 @@ def generate(
         # If we have a gist URL, fetch it
         if gist_url:
             try:
-                console.print(f"\n[cyan]Fetching from GitHub Gist:[/cyan] {gist_url}")
-                md_files = gist_handler.fetch_gist_files(gist_url, github_token)
+                console.print()
+                print_info("Fetching from GitHub Gist", gist_url)
+
+                with console.status("[cyan]Fetching gist files...[/cyan]", spinner="dots"):
+                    md_files = gist_handler.fetch_gist_files(gist_url, github_token)
 
                 if not md_files:
-                    console.print("\n[yellow]No markdown files found in gist.[/yellow]")
+                    print_warning("No markdown files found in gist.")
                     return
 
-                console.print(f"[green]✓[/green] Fetched {len(md_files)} markdown file(s) from gist\n")
+                print_success(f"Fetched {len(md_files)} markdown file(s) from gist")
 
             except ValueError as e:
-                console.print(f"\n[bold red]Invalid gist:[/bold red] {e}")
+                print_error(f"Invalid gist: {e}")
                 sys.exit(1)
             except ConnectionError as e:
-                console.print(f"\n[bold red]Connection error:[/bold red] {e}")
+                print_error(f"Connection error: {e}")
                 sys.exit(1)
             except PermissionError as e:
-                console.print(f"\n[bold red]Permission denied:[/bold red] {e}")
-                console.print("[yellow]Tip:[/yellow] Use --github-token for private gists")
+                print_error(f"Permission denied: {e}")
+                console.print("[muted]Tip: Use --github-token for private gists[/muted]")
                 sys.exit(1)
         else:
             # Original logic: find markdown files from input_dir
             input_type = "file" if input_dir.is_file() else "directory"
-            console.print(f"\n[cyan]Input:[/cyan] {input_dir} ({input_type})")
+            console.print()
+            print_info("Input", f"{input_dir} ({input_type})")
             if input_dir.is_dir():
-                console.print(f"[cyan]Recursive:[/cyan] {'Yes' if recursive else 'No'}")
+                print_info("Recursive", "Yes" if recursive else "No")
 
             md_files = file_handler.get_markdown_files_from_path(
                 input_dir, recursive=recursive
             )
 
         if not md_files:
-            console.print("\n[yellow]No markdown files found.[/yellow]")
+            print_warning("No markdown files found.")
             return
 
-        console.print(f"[cyan]Found:[/cyan] {len(md_files)} markdown file(s)\n")
+        print_info("Found", f"{len(md_files)} markdown file(s)")
+        console.print()
 
         # Process files and generate diagrams
         result = ProcessingResult()
         mappings = []
 
-        # Use rich progress if available, otherwise simple output
-        if RICH_AVAILABLE:
-            progress_ctx = Progress(
-                SpinnerColumn(),
-                TextColumn("[progress.description]{task.description}"),
-                BarColumn(),
-                TaskProgressColumn(),
-                TimeElapsedColumn(),
-                console=console,
-            )
-        else:
-            # Simple progress context manager for slim mode
-            class SimpleProgress:
-                def __enter__(self):
-                    return self
-                def __exit__(self, *args):
-                    pass
-                def add_task(self, desc, total):
-                    self.total = total
-                    self.current = 0
-                    return 0
-                def advance(self, task_id):
-                    self.current += 1
-                    print(f"Processing... {self.current}/{self.total}", end="\r")
-            progress_ctx = SimpleProgress()
-
-        with progress_ctx as progress:
+        # Create progress bar
+        with Progress(
+            SpinnerColumn(),
+            TextColumn("[progress.description]{task.description}"),
+            BarColumn(complete_style="cyan", finished_style="green"),
+            TaskProgressColumn(),
+            TimeElapsedColumn(),
+            console=console,
+            expand=True,
+        ) as progress:
             task = progress.add_task("[cyan]Processing files...", total=len(md_files))
 
             for md_file in md_files:
                 try:
+                    # Update progress description
+                    progress.update(task, description=f"[cyan]Processing {md_file.name}...")
+
                     # Extract mermaid diagrams
                     diagrams = extractor.extract_mermaid_blocks(md_file)
 
@@ -572,12 +585,12 @@ def generate(
                         # Create linked markdown if requested
                         if linked_file:
                             try:
-                                linked_file = file_handler.create_linked_markdown(
+                                linked_md = file_handler.create_linked_markdown(
                                     md_file, diagram_files, output_in_source_dir=True
                                 )
-                                if linked_file:
+                                if linked_md:
                                     logger.debug(
-                                        f"Created linked markdown: {linked_file.name}"
+                                        f"Created linked markdown: {linked_md.name}"
                                     )
                             except Exception as e:
                                 logger.warning(
@@ -613,25 +626,46 @@ def generate(
                 logger.info(f"Generated index.html for {proj_name}")
 
         # Display summary
-        console.print("\n[bold cyan]Summary:[/bold cyan]")
-        console.print(f"  Files processed: {result.files_processed}")
-        console.print(
-            f"  Diagrams generated: [green]{result.diagrams_generated}[/green]"
+        console.print()
+        console.print(Rule("[bold cyan]Summary[/bold cyan]", style="cyan"))
+        console.print()
+
+        # Create summary table
+        summary_table = Table(show_header=False, box=None, padding=(0, 2))
+        summary_table.add_column("Metric", style="dim")
+        summary_table.add_column("Value")
+
+        summary_table.add_row("Files processed", str(result.files_processed))
+        summary_table.add_row(
+            "Diagrams generated",
+            f"[green]{result.diagrams_generated}[/green]",
         )
         if result.diagrams_failed > 0:
-            console.print(f"  Diagrams failed: [red]{result.diagrams_failed}[/red]")
+            summary_table.add_row(
+                "Diagrams failed",
+                f"[red]{result.diagrams_failed}[/red]",
+            )
+
+        console.print(summary_table)
 
         if result.errors and verbose:
-            console.print("\n[bold red]Errors:[/bold red]")
+            console.print()
+            console.print("[bold red]Errors:[/bold red]")
             for error in result.errors:
-                console.print(f"  • {error}")
+                console.print(f"  [red]>[/red] {error}")
+
+        if result.diagrams_generated > 0:
+            console.print()
+            print_success("Generation complete!")
+            if not linked_file:
+                console.print(f"[muted]View diagrams at: {output_path}[/muted]")
 
         if result.diagrams_failed > 0:
             sys.exit(1)
 
     except Exception as e:
         logger.exception("Error during generation")
-        console.print(f"\n[bold red]Error:[/bold red] {str(e)}")
+        print_error(str(e))
         sys.exit(1)
 
 
@@ -697,82 +731,90 @@ def scan(
     setup_logging(verbose)
     logger = logging.getLogger(__name__)
 
-    if RICH_AVAILABLE:
-        console.print(
-            Panel.fit(
-                "[bold cyan]MermaidVisualizer - Scan Diagrams[/bold cyan]",
-                border_style="cyan",
-            )
-        )
-    else:
-        console.print("=" * 50)
-        console.print("MermaidVisualizer - Scan Diagrams")
-        console.print("=" * 50)
+    # Print header
+    print_header(
+        "MermaidVisualizer - Scan Diagrams",
+        "Preview diagrams without generating files",
+    )
 
     try:
         # Find markdown files
         input_type = "file" if input_dir.is_file() else "directory"
-        console.print(f"\n[cyan]Input:[/cyan] {input_dir} ({input_type})")
+        console.print()
+        print_info("Input", f"{input_dir} ({input_type})")
         if input_dir.is_dir():
-            console.print(f"[cyan]Recursive:[/cyan] {'Yes' if recursive else 'No'}\n")
-        else:
-            console.print()
+            print_info("Recursive", "Yes" if recursive else "No")
+        console.print()
 
         md_files = file_handler.get_markdown_files_from_path(
             input_dir, recursive=recursive
         )
 
         if not md_files:
-            console.print("[yellow]No markdown files found.[/yellow]")
+            print_warning("No markdown files found.")
             return
 
-        # Collect all diagrams
+        # Collect all diagrams with progress
         all_diagrams = []
-        for md_file in md_files:
-            try:
-                diagrams = extractor.extract_mermaid_blocks(md_file)
-                all_diagrams.extend(diagrams)
-            except Exception as e:
-                logger.error(f"Error scanning {md_file.name}: {str(e)}")
+
+        with console.status("[cyan]Scanning files...[/cyan]", spinner="dots") as status:
+            for md_file in md_files:
+                status.update(f"[cyan]Scanning {md_file.name}...[/cyan]")
+                try:
+                    diagrams = extractor.extract_mermaid_blocks(md_file)
+                    all_diagrams.extend(diagrams)
+                except Exception as e:
+                    logger.error(f"Error scanning {md_file.name}: {str(e)}")
 
         total_diagrams = len(all_diagrams)
 
         if total_diagrams > 0:
-            if RICH_AVAILABLE:
-                # Create rich table
-                table = Table(title="Mermaid Diagrams Found")
-                table.add_column("Source File", style="cyan")
-                table.add_column("Diagram Type", style="green")
-                table.add_column("Line Range", style="yellow")
-                for diagram in all_diagrams:
-                    table.add_row(
-                        diagram.source_file.name,
-                        diagram.diagram_type,
-                        f"{diagram.start_line}-{diagram.end_line}",
-                    )
-                console.print(table)
-            else:
-                # Simple text table for slim mode
-                console.print("\nMermaid Diagrams Found:")
-                console.print("-" * 60)
-                console.print(f"{'Source File':<25} {'Type':<15} {'Lines':<10}")
-                console.print("-" * 60)
-                for diagram in all_diagrams:
-                    console.print(
-                        f"{diagram.source_file.name:<25} {diagram.diagram_type:<15} "
-                        f"{diagram.start_line}-{diagram.end_line}"
-                    )
-                console.print("-" * 60)
-
-            console.print(
-                f"\n[bold]Total:[/bold] {total_diagrams} diagram(s) in {len(md_files)} file(s)"
+            # Create rich table
+            table = Table(
+                title="Mermaid Diagrams Found",
+                title_style="bold cyan",
+                header_style="bold",
+                border_style="cyan",
+                show_lines=True,
             )
+            table.add_column("#", style="dim", justify="right", width=4)
+            table.add_column("Source File", style="cyan")
+            table.add_column("Diagram Type", style="green")
+            table.add_column("Lines", style="yellow", justify="center")
+            table.add_column("Context", style="dim", max_width=30)
+
+            for idx, diagram in enumerate(all_diagrams, 1):
+                # Get context (header or title if available)
+                context = diagram.preceding_header or diagram.diagram_title or "-"
+                if len(context) > 30:
+                    context = context[:27] + "..."
+
+                table.add_row(
+                    str(idx),
+                    diagram.source_file.name,
+                    diagram.diagram_type,
+                    f"{diagram.start_line}-{diagram.end_line}",
+                    context,
+                )
+
+            console.print(table)
+            console.print()
+
+            # Summary
+            summary_text = Text()
+            summary_text.append("Total: ", style="bold")
+            summary_text.append(f"{total_diagrams}", style="bold cyan")
+            summary_text.append(" diagram(s) in ", style="bold")
+            summary_text.append(f"{len(md_files)}", style="bold cyan")
+            summary_text.append(" file(s)", style="bold")
+
+            console.print(Panel(summary_text, border_style="cyan"))
         else:
-            console.print("[yellow]No Mermaid diagrams found.[/yellow]")
+            print_warning("No Mermaid diagrams found.")
 
     except Exception as e:
         logger.exception("Error during scan")
-        console.print(f"\n[bold red]Error:[/bold red] {str(e)}")
+        print_error(str(e))
         sys.exit(1)
 
 
@@ -823,20 +865,15 @@ def clean(output_dir: str, yes: bool) -> None:
     """
     output_path = Path(output_dir).resolve()
 
-    if RICH_AVAILABLE:
-        console.print(
-            Panel.fit(
-                "[bold cyan]MermaidVisualizer - Clean Diagrams[/bold cyan]",
-                border_style="cyan",
-            )
-        )
-    else:
-        console.print("=" * 50)
-        console.print("MermaidVisualizer - Clean Diagrams")
-        console.print("=" * 50)
+    # Print header
+    print_header(
+        "MermaidVisualizer - Clean Diagrams",
+        "Remove generated diagram files",
+    )
 
     if not output_path.exists():
-        console.print(f"\n[yellow]Directory does not exist:[/yellow] {output_path}")
+        console.print()
+        print_warning(f"Directory does not exist: {output_path}")
         return
 
     # Count files
@@ -844,28 +881,33 @@ def clean(output_dir: str, yes: bool) -> None:
     file_count = len([f for f in files if f.is_file()])
 
     if file_count == 0:
-        console.print(f"\n[yellow]No files to clean in:[/yellow] {output_path}")
+        console.print()
+        print_warning(f"No files to clean in: {output_path}")
         return
 
-    console.print(f"\n[yellow]This will delete {file_count} file(s) from:[/yellow]")
-    console.print(f"  {output_path}\n")
+    console.print()
+    console.print(f"[warning]This will delete {file_count} file(s) from:[/warning]")
+    console.print(f"  [dim]{output_path}[/dim]")
+    console.print()
 
     if not yes:
         if not click.confirm("Continue?"):
-            console.print("[yellow]Cancelled.[/yellow]")
+            print_warning("Cancelled.")
             return
 
     try:
         deleted = 0
-        for file in files:
-            if file.is_file():
-                file.unlink()
-                deleted += 1
+        with console.status("[cyan]Deleting files...[/cyan]", spinner="dots"):
+            for file in files:
+                if file.is_file():
+                    file.unlink()
+                    deleted += 1
 
-        console.print(f"\n[green]✓[/green] Deleted {deleted} file(s)")
+        console.print()
+        print_success(f"Deleted {deleted} file(s)")
 
     except Exception as e:
-        console.print(f"\n[bold red]Error:[/bold red] {str(e)}")
+        print_error(str(e))
         sys.exit(1)
 
 
