@@ -1,9 +1,9 @@
 """
 Mermaid.ink API-based diagram renderer.
 
-This module provides a zero-dependency alternative to mermaid-cli by using
-the mermaid.ink public API for rendering diagrams. This enables a slim
-installation that doesn't require Node.js, Chrome, or Puppeteer.
+This module provides the default rendering backend using the mermaid.ink
+public API. This approach requires zero external dependencies beyond Python
+packages - no Node.js, Chrome, or Puppeteer needed.
 
 Uses Rich for beautiful console output and progress feedback.
 
@@ -73,8 +73,8 @@ def generate_diagram_api(
         import requests
     except ImportError:
         logger.error(
-            "The 'requests' package is required for API rendering. "
-            "Install with: pip install mermaid-visualizer[api]"
+            "The 'requests' package is required but not found. "
+            "Install with: pip install mermaid-visualizer"
         )
         return False
 

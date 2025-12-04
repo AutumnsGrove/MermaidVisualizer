@@ -2,8 +2,11 @@
 Command-line interface for MermaidVisualizer.
 
 This module provides a CLI using Click framework for extracting Mermaid diagrams
-from markdown files and generating visualizations. Uses Rich for beautiful
-terminal output with progress bars, tables, and styled text.
+from markdown files and generating visualizations. By default, diagrams are
+rendered using the mermaid.ink API, requiring no external dependencies beyond
+Python packages. Local rendering via mermaid-cli is available as an option.
+
+Uses Rich for beautiful terminal output with progress bars, tables, and styled text.
 """
 
 import logging
@@ -173,27 +176,32 @@ def cli(ctx):
     MermaidVisualizer - Automated Mermaid Diagram Extraction & Generation
 
     Extract Mermaid diagrams from markdown files and generate visual diagrams
-    in PNG or SVG format. Supports recursive directory scanning, multiple
-    diagram types, and automated wiki-style markdown linking.
+    in PNG or SVG format. Uses the mermaid.ink API by default - no Node.js,
+    Chrome, or other external dependencies required!
 
     \b
     QUICK START:
+      $ pip install mermaid-visualizer      # Install (just Python!)
       $ mermaid generate                    # Generate from current directory
       $ mermaid generate -i ./docs          # Generate from a directory
-      $ mermaid generate -i ./doc.md        # Generate from a single file
       $ mermaid scan                        # Preview diagrams (dry run)
-      $ mermaid clean                       # Remove generated diagrams
+
+    \b
+    RENDERING MODES:
+      Default (API):  Uses mermaid.ink - zero external dependencies
+      Local:          Uses mermaid-cli - requires Node.js & Chrome
+                      Enable with: mermaid generate --local
 
     \b
     EXAMPLES:
-      # Generate from a single file
+      # Generate from a single file (uses mermaid.ink API)
       $ mermaid generate -i ./docs/architecture.md
-
-      # Generate high-resolution PNG diagrams from a directory
-      $ mermaid generate -i ./docs -o ./diagrams -s 3 -w 2400
 
       # Generate SVG diagrams with linked markdown files
       $ mermaid generate -f svg -l
+
+      # Use local mermaid-cli instead of API
+      $ mermaid generate --local -i ./docs
 
       # Scan a file or directory without generating
       $ mermaid scan -i ./docs --recursive
@@ -243,7 +251,7 @@ def cli(ctx):
     "-s",
     default=3,
     type=int,
-    help="Scale factor for PNG output (higher = better quality, larger file)",
+    help="Scale factor for PNG output (--local mode only)",
     show_default=True,
 )
 @click.option(
@@ -251,7 +259,7 @@ def cli(ctx):
     "-w",
     default=2400,
     type=int,
-    help="Width of output image in pixels",
+    help="Width of output image in pixels (--local mode only)",
     show_default=True,
 )
 @click.option(
@@ -294,9 +302,9 @@ def cli(ctx):
     help="GitHub personal access token for private gists and higher rate limits (can also set GITHUB_TOKEN env var)",
 )
 @click.option(
-    "--api",
+    "--local",
     is_flag=True,
-    help="Use mermaid.ink API for rendering (no Node.js/Chrome needed - slim install)",
+    help="Use local mermaid-cli for rendering (requires Node.js/Chrome installation)",
 )
 def generate(
     input_dir: Path,
@@ -310,7 +318,7 @@ def generate(
     intelligent_names: bool,
     gist: Optional[str],
     github_token: Optional[str],
-    api: bool,
+    local: bool,
 ) -> None:
     """
     Extract Mermaid diagrams from markdown files and generate visual diagrams.
@@ -318,8 +326,15 @@ def generate(
     \b
     This command processes either a single markdown file, a directory
     containing markdown files, or a GitHub Gist with markdown files.
-    It extracts ```mermaid code blocks and generates visual diagrams
-    using the Mermaid CLI tool.
+    It extracts ```mermaid code blocks and generates visual diagrams.
+
+    By default, uses the mermaid.ink API for rendering (no external
+    dependencies). Use --local for local mermaid-cli rendering.
+
+    \b
+    RENDERING MODES:
+      Default (API):  Uses mermaid.ink - zero external dependencies
+      --local:        Uses mermaid-cli - requires Node.js & Chrome
 
     \b
     INPUT SOURCES:
@@ -356,36 +371,26 @@ def generate(
 
     \b
     EXAMPLES:
-      # Basic usage (current directory)
+      # Basic usage - renders via mermaid.ink API (default)
       $ mermaid generate
 
       # Process a single markdown file
       $ mermaid generate -i ./docs/architecture.md
 
-      # Process an entire directory
-      $ mermaid generate -i ./docs
+      # Use local mermaid-cli instead of API
+      $ mermaid generate --local -i ./docs
 
       # Fetch from a public GitHub Gist (auto-detect)
       $ mermaid generate -i https://gist.github.com/user/abc123
 
-      # Fetch from a Gist with explicit flag
-      $ mermaid generate --gist https://gist.github.com/user/abc123
-
       # Fetch from a private Gist
       $ mermaid generate -g https://gist.github.com/user/abc123 --github-token ghp_xxx
-      $ export GITHUB_TOKEN=ghp_xxx && mermaid generate -i https://gist.github.com/user/abc123
 
-      # Use simple filenames instead of intelligent names
-      $ mermaid generate --simple-names
+      # Generate SVG diagrams
+      $ mermaid generate -f svg
 
-      # High-resolution PNG with custom scale
-      $ mermaid generate -s 5 -w 3200
-
-      # Generate SVG diagrams with intelligent naming
-      $ mermaid generate -f svg --intelligent-names
-
-      # Non-recursive directory scan
-      $ mermaid generate --no-recursive
+      # Local rendering with high-resolution PNG
+      $ mermaid generate --local -s 5 -w 3200
 
       # Create linked markdown files
       $ mermaid generate -l
@@ -393,9 +398,9 @@ def generate(
     setup_logging(verbose)
     logger = logging.getLogger(__name__)
 
-    # Enable API mode if requested
-    if api:
-        generator.set_api_mode(True)
+    # Disable API mode if --local flag is used (API is default)
+    if local:
+        generator.set_api_mode(False)
 
     output_path = Path(output_dir).resolve()
 
@@ -407,10 +412,10 @@ def generate(
 
     # Show mode
     console.print()
-    if api:
-        print_info("Mode", "API rendering (mermaid.ink)")
-    else:
+    if local:
         print_info("Mode", "Local rendering (mermaid-cli)")
+    else:
+        print_info("Mode", "API rendering (mermaid.ink)")
 
     try:
         # Ensure output directory exists

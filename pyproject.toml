@@ -24,18 +24,18 @@ classifiers = [
 dependencies = [
     "click>=8.1.0",
     "rich>=13.7.0",
+    "requests>=2.31.0",
 ]
 
 [project.optional-dependencies]
-# Slim install with API rendering (no Node.js/Chrome needed)
-api = [
-    "requests>=2.31.0",
+# Local rendering with mermaid-cli (requires Node.js/Chrome)
+local = [
+    "pyyaml>=6.0",
 ]
-# Full install with all features
+# Full install with all optional features
 full = [
     "pyyaml>=6.0",
     "watchdog>=3.0.0",
-    "requests>=2.31.0",
 ]
 # Development dependencies
 dev = [
