@@ -3,8 +3,8 @@ Mermaid diagram generator module.
 
 This module provides functionality to generate PNG and SVG diagrams from Mermaid syntax.
 Supports two rendering backends:
-1. Local: mermaid-cli (requires Node.js, Chrome/Puppeteer)
-2. API: mermaid.ink (requires only 'requests' package - slim install)
+1. API: mermaid.ink (default - zero external dependencies)
+2. Local: mermaid-cli (optional - requires Node.js, Chrome/Puppeteer)
 
 Uses Rich for beautiful console output and progress feedback.
 """
@@ -24,18 +24,18 @@ logger = logging.getLogger(__name__)
 # Console for rich output
 console = Console()
 
-# Global flag for API mode
-_use_api_mode = False
+# Global flag for API mode (default: True - uses mermaid.ink)
+_use_api_mode = True
 
 
 def set_api_mode(enabled: bool) -> None:
-    """Enable or disable API rendering mode."""
+    """Enable or disable API rendering mode (API is default)."""
     global _use_api_mode
     _use_api_mode = enabled
     if enabled:
-        logger.info("Using mermaid.ink API for diagram rendering (slim mode)")
+        logger.debug("Using mermaid.ink API for diagram rendering")
     else:
-        logger.debug("Using local mermaid-cli for diagram rendering")
+        logger.info("Using local mermaid-cli for diagram rendering")
 
 
 def is_api_mode() -> bool:

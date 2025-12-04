@@ -6,41 +6,41 @@ Automated extraction and generation of Mermaid diagrams from markdown files.
 
 MermaidVisualizer is a Python tool that recursively scans directories for markdown files, extracts Mermaid diagram definitions, and automatically generates visual diagrams as image files (PNG/SVG). Perfect for documentation projects, technical wikis, and automated diagram generation pipelines.
 
+**Zero external dependencies required!** Uses the [mermaid.ink](https://mermaid.ink) API by default - no Node.js, Chrome, or Puppeteer needed.
+
 ## Features
 
+- **Zero Dependencies**: Uses mermaid.ink API by default - just install and run
 - **Automatic Extraction**: Finds all \`\`\`mermaid code blocks in markdown files
 - **Recursive Scanning**: Processes entire directory trees
 - **Multiple Formats**: Generate PNG or SVG diagrams
 - **Organized Output**: Creates structured output directory with clear naming
 - **Diagram Mapping**: Generates index showing all diagrams with source links
-- **Smart Caching**: Skips regeneration of unchanged diagrams
 - **Rich CLI**: Beautiful command-line interface with progress indicators
-- **Watch Mode**: Auto-regenerate diagrams when markdown files change
+- **Optional Local Rendering**: Use mermaid-cli for offline/bulk processing
 
 ## Installation
 
-### Slim Install (Recommended - No Node.js Required!)
-
-The slimmest way to install - uses the mermaid.ink API for rendering:
+### Standard Install (Recommended)
 
 ```bash
-# Install with API rendering support (just Python + requests)
-pip install mermaid-visualizer[api]
+# Install with pip
+pip install mermaid-visualizer
 
 # Or with UV
-uv tool install mermaid-visualizer[api]
+uv tool install mermaid-visualizer
 ```
 
-**That's it!** No Node.js, no Chrome, no Puppeteer. Use the `--api` flag:
+**That's it!** No Node.js, no Chrome, no Puppeteer. Just run:
 
 ```bash
-mermaid generate --api -i ./docs
-mermaid generate --api -i ./docs/architecture.md -f svg
+mermaid generate -i ./docs
+mermaid generate -i ./docs/architecture.md -f svg
 ```
 
-### Full Install (Local Rendering)
+### Local Rendering (Optional)
 
-For offline use or large diagrams, install with local mermaid-cli:
+For offline use or very large diagrams, you can optionally install mermaid-cli for local rendering:
 
 #### Prerequisites
 - Python 3.10+
@@ -48,9 +48,6 @@ For offline use or large diagrams, install with local mermaid-cli:
 - Chrome headless shell (for Puppeteer)
 
 ```bash
-# Install Python package with all features
-pip install mermaid-visualizer[full]
-
 # Install mermaid-cli
 npm install -g @mermaid-js/mermaid-cli
 
@@ -58,12 +55,11 @@ npm install -g @mermaid-js/mermaid-cli
 npx puppeteer browsers install chrome-headless-shell
 ```
 
-Now you can use local rendering (no `--api` flag needed):
+Then use the `--local` flag to render locally:
 
 ```bash
-mermaid generate --input-dir ./docs
-mermaid scan
-mermaid clean
+mermaid generate --local -i ./docs
+mermaid generate --local -s 3 -w 2400  # High-resolution output
 ```
 
 ### Development Install
@@ -88,32 +84,32 @@ uv pip install -e ".[full,dev]"
 ### Basic Commands
 
 ```bash
-# Generate diagrams using API (slim install)
-mermaid generate --api
-
-# Generate diagrams using local mermaid-cli (full install)
+# Generate diagrams (uses mermaid.ink API by default)
 mermaid generate
 
 # Specify input and output directories
-mermaid generate --api --input-dir ./docs --output-dir ./diagrams
+mermaid generate -i ./docs -o ./diagrams
 
 # Generate SVG instead of PNG
-mermaid generate --api --format svg
+mermaid generate -f svg
+
+# Use local mermaid-cli instead of API
+mermaid generate --local
 
 # High-resolution output (local rendering only)
-mermaid generate --scale 3 --width 2400
+mermaid generate --local -s 3 -w 2400
 
 # Scan without generating (dry run)
-mermaid scan --input-dir ./docs
+mermaid scan -i ./docs
 
 # Clean generated diagrams
-mermaid clean --output-dir ./diagrams
+mermaid clean -o ./diagrams
 ```
 
 If running from source:
 
 ```bash
-python -m src.cli generate --input-dir ./docs
+python -m src.cli generate -i ./docs
 ```
 
 ### Configuration
@@ -221,8 +217,8 @@ MermaidVisualizer/
 │   ├── __init__.py
 │   ├── cli.py            # CLI interface
 │   ├── extractor.py      # Mermaid block extraction
-│   ├── generator.py      # Diagram generation (local mermaid-cli)
-│   ├── api_renderer.py   # API rendering (mermaid.ink - slim install)
+│   ├── generator.py      # Diagram generation router
+│   ├── api_renderer.py   # API rendering (mermaid.ink - default)
 │   ├── file_handler.py   # File system operations
 │   └── gist_handler.py   # GitHub Gist support
 ├── tests/
@@ -245,21 +241,32 @@ Contributions welcome! Please feel free to submit a Pull Request.
 
 ## Troubleshooting
 
-### Chrome/Puppeteer Errors
+### API Rendering Issues (Default Mode)
+
+If diagrams fail to generate using the default API mode:
+
+- Check that your Mermaid syntax is valid on [Mermaid Live Editor](https://mermaid.live)
+- Ensure you have internet connectivity
+- Very large diagrams may exceed URL length limits - try `--local` mode
+- Rate limiting may occur with many requests - add delays or use `--local`
+
+### Local Rendering Issues (--local mode)
+
+These issues only apply when using `mermaid generate --local`:
+
+#### Chrome/Puppeteer Errors
 
 If you see errors about "Could not find Chrome" or Puppeteer:
 
 ```bash
-# Install Chrome headless shell (required for diagram rendering)
+# Install Chrome headless shell
 npx puppeteer browsers install chrome-headless-shell
 
 # Verify installation
 ls ~/.cache/puppeteer/
 ```
 
-The tool will automatically detect and use the installed Chrome binary.
-
-### Mermaid CLI Not Found
+#### Mermaid CLI Not Found
 
 If you see errors about `mmdc` or Mermaid CLI:
 
@@ -271,18 +278,10 @@ npm install -g @mermaid-js/mermaid-cli
 npx @mermaid-js/mermaid-cli --version
 ```
 
-### Diagram Generation Fails
-
-- Check that your Mermaid syntax is valid
-- Try the diagram on [Mermaid Live Editor](https://mermaid.live)
-- Ensure Chrome headless shell is installed (see above)
-- Check logs for specific error messages
-- Ensure Node.js is installed
-
 ## Roadmap
 
-- [x] API mode for cloud rendering (mermaid.ink)
-- [x] Slim install option (no Node.js/Chrome required)
+- [x] API mode for cloud rendering (mermaid.ink) - now the default!
+- [x] Zero-dependency install (no Node.js/Chrome required)
 - [ ] Batch processing optimization
 - [ ] Custom theme support
 - [ ] Docker container for isolated execution
