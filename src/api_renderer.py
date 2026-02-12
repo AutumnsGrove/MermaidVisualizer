@@ -11,6 +11,7 @@ API: https://mermaid.ink
 """
 
 import base64
+import json
 import logging
 import zlib
 from pathlib import Path
@@ -27,20 +28,31 @@ console = Console()
 MERMAID_INK_BASE = "https://mermaid.ink"
 
 
-def _encode_diagram(mermaid_content: str) -> str:
+def _encode_diagram(mermaid_content: str, theme: str = "default") -> str:
     """
     Encode mermaid diagram content for the mermaid.ink API.
 
     Uses pako deflate compression + base64 encoding (same as mermaid.live).
+    Wraps the diagram in the JSON format expected by the API.
 
     Args:
         mermaid_content: Raw mermaid diagram syntax
+        theme: Mermaid theme (default, dark, forest, neutral)
 
     Returns:
         URL-safe encoded string for the API
     """
+    # Wrap content in JSON object format expected by API
+    json_obj = {
+        "code": mermaid_content,
+        "mermaid": {
+            "theme": theme
+        }
+    }
+    json_str = json.dumps(json_obj)
+
     # Compress with zlib (pako compatible)
-    compressed = zlib.compress(mermaid_content.encode("utf-8"), level=9)
+    compressed = zlib.compress(json_str.encode("utf-8"), level=9)
     # Base64 encode and make URL-safe
     encoded = base64.urlsafe_b64encode(compressed).decode("ascii")
     return encoded
@@ -103,7 +115,7 @@ def generate_diagram_api(
 
     try:
         # Encode the diagram content
-        encoded = _encode_diagram(mermaid_content)
+        encoded = _encode_diagram(mermaid_content, theme)
 
         # Build the API URL
         endpoint = "svg" if format == "svg" else "img"
